@@ -1,8 +1,11 @@
 package toolkit
 
 import (
+	"errors"
 	"github.com/google/uuid"
 	"math/rand"
+	"path"
+	"runtime"
 	"strings"
 )
 
@@ -26,4 +29,13 @@ func randomOwner() string {
 
 func generateUUID() string {
 	return uuid.New().String()
+}
+
+func getRootDir() (string, error) {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", errors.New("unable to read current file")
+	}
+	pwd := path.Dir(filename)
+	return path.Join(pwd, "..", ".."), nil
 }
