@@ -2,4 +2,4 @@
 
 ### import to use it
 ````
-go get -u github.com/alabuta-source/toolkit@v.1.0.0
+go get -u github.com/alabuta-source/toolkit@latest
