@@ -25,3 +25,23 @@ func (payload *TokenPayload) Valid() error {
 	}
 	return nil
 }
+
+// EmailSenderConfig is a struct that contains the configuration for the email sender
+// Use it to create a new email sender client passing it as a parameter
+type EmailSenderConfig struct {
+	// The email account secret password
+	Password string
+	// The email account owner identification, this is the email address that will be used to send the emails
+	From string
+	// The email server configuration, example: smtp.gmail.com
+	ServerConfig string
+	// The email server port
+	Port int
+}
+
+// EmailTemplateBody is a struct that contains the configuration for the email template
+// Use it to send data for simple templates that only need a name and an url.
+type EmailTemplateBody struct {
+	Name string
+	URL  string
+}
