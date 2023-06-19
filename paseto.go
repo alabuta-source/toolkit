@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	expiredTokenErr = errors.New("token has expired")
-	invalidTokenErr = errors.New("token is invalid")
+	expiredTokenErr = "token has expired: [%s]"
+	invalidTokenErr = "token is invalid: [%s]"
 )
 
 type PasetoTokenBuilder interface {
@@ -45,7 +45,7 @@ func (maker *pasetoMaker) VerifyToken(token string) (*TokenPayload, error) {
 
 	err := maker.paseto.Decrypt(token, maker.symmetricKey, payload, nil)
 	if err != nil {
-		return nil, invalidTokenErr
+		return nil, errors.New(formatErr(invalidTokenErr, err.Error()))
 	}
 
 	err = payload.Valid()

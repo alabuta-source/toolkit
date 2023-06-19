@@ -1,6 +1,9 @@
 package toolkit
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type TokenPayload struct {
 	ID        string    `json:"id"`
@@ -21,7 +24,7 @@ func NewPayload(tokenID, username string, duration time.Duration) *TokenPayload 
 
 func (payload *TokenPayload) Valid() error {
 	if time.Now().After(payload.ExpiredAt) {
-		return expiredTokenErr
+		return errors.New(formatErr(expiredTokenErr))
 	}
 	return nil
 }
