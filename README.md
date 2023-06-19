@@ -37,6 +37,46 @@ func ValidateToken(token string) (*toolkit.TokenPayload, error) {
     }
     return payload, nil
 }
+```
 
+### Using Email sender
+```go
+package main
+import "github.com/alabuta-source/toolkit"
+
+func SendEmail(to string, subject string, body string) error {
+	config := &toolkit.EmailSenderConfig{
+		Password:     "test123",
+		From:         "some@test.com",
+		ServerConfig: "smtp.gmail.com,
+		Port:         123,
+    }
+	
+    emailSender := toolkit.NewEmailSender(config)
+    emailSender.SendEmail(to, subject, body)
+}
+```
+
+### Using Email sender with template
+```go  
+package main
+import "github.com/alabuta-source/toolkit"
+
+func SendWellComeEmailWithTemplate(to string, subject string, templatePath string, username string, url string) error {
+	config := &toolkit.EmailSenderConfig{
+		Password:     "test123",
+		From:         "some@test.com",
+		ServerConfig: "smtp.gmail.com,
+		Port:         123,
+	}
+	
+	body := &toolkit.EmailTemplateBody{
+		Name: username,
+		URL:  url,
+	}
+    
+    emailSender := toolkit.NewEmailSender(config)
+  return emailSender.SendEmailWithSimpleTemplate(to, subject, templatePath, body)
+}
 ```
 
