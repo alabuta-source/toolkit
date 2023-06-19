@@ -2,6 +2,7 @@ package toolkit
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"math/rand"
 	"path"
@@ -38,4 +39,8 @@ func getRootDir() (string, error) {
 	}
 	pwd := path.Dir(filename)
 	return path.Join(pwd, "..", ".."), nil
+}
+
+func formatErr(msg string, args ...interface{}) string {
+	return fmt.Sprintf(msg, args...)
 }

@@ -48,12 +48,12 @@ func SendEmail(to string, subject string, body string) error {
 	config := &toolkit.EmailSenderConfig{
 		Password:     "test123",
 		From:         "some@test.com",
-		ServerConfig: "smtp.gmail.com,
+		ServerConfig: "smtp.gmail.com",
 		Port:         123,
     }
 	
     emailSender := toolkit.NewEmailSender(config)
-    emailSender.SendEmail(to, subject, body)
+   return emailSender.SendEmail(to, subject, body)
 }
 ```
 
@@ -66,7 +66,7 @@ func SendWellComeEmailWithTemplate(to string, subject string, templatePath strin
 	config := &toolkit.EmailSenderConfig{
 		Password:     "test123",
 		From:         "some@test.com",
-		ServerConfig: "smtp.gmail.com,
+		ServerConfig: "smtp.gmail.com",
 		Port:         123,
 	}
 	
