@@ -2,6 +2,8 @@ package toolkit
 
 import (
 	"errors"
+	"fmt"
+	"github.com/aead/chacha20poly1305"
 	"github.com/o1egl/paseto"
 	"time"
 )
@@ -11,7 +13,7 @@ var (
 	invalidTokenErr = "token is invalid: [%s]"
 )
 
-type PasetoTokenBuilder interface {
+type TokenBuilder interface {
 	// CreateToken creates a new token for a specific username and duration,
 	// and returns the signed token string or an error.
 	// The tokenID is used to identify the token you can send a UUID or the userID.
@@ -25,14 +27,17 @@ type pasetoMaker struct {
 	symmetricKey []byte
 }
 
-// NewPasetoMaker creates a new PasetoTokenBuilder.
+// NewTokenMaker creates a new TokenBuilder.
 // The symmetricKey is used to sign the token and needs to be a 32 len string
-func NewPasetoMaker(symmetricKey string) PasetoTokenBuilder {
+func NewTokenMaker(symmetricKey string) (TokenBuilder, error) {
+	if len(symmetricKey) != chacha20poly1305.KeySize {
+		return nil, fmt.Errorf("invalid key size: must be exactly %d characters", chacha20poly1305.KeySize)
+	}
 	maker := &pasetoMaker{
 		paseto:       paseto.NewV2(),
 		symmetricKey: []byte(symmetricKey),
 	}
-	return maker
+	return maker, nil
 }
 
 func (maker *pasetoMaker) CreateToken(tokenID, username string, duration time.Duration) (string, error) {
@@ -48,7 +53,7 @@ func (maker *pasetoMaker) VerifyToken(token string) (*TokenPayload, error) {
 		return nil, errors.New(formatErr(invalidTokenErr, err.Error()))
 	}
 
-	err = payload.Valid()
+	err = payload.valid()
 	if err != nil {
 		return nil, err
 	}

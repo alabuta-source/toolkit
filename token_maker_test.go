@@ -7,7 +7,8 @@ import (
 )
 
 func TestPasetoMaker(t *testing.T) {
-	maker := NewPasetoMaker(randomString(32))
+	maker, pErr := NewTokenMaker(randomString(32))
+	require.NoError(t, pErr)
 
 	username := randomOwner()
 	duration := time.Minute
@@ -31,7 +32,8 @@ func TestPasetoMaker(t *testing.T) {
 }
 
 func TestExpiredPasetoToken(t *testing.T) {
-	maker := NewPasetoMaker(randomString(32))
+	maker, pErr := NewTokenMaker(randomString(32))
+	require.NoError(t, pErr)
 	tokenID := generateUUID()
 
 	token, err := maker.CreateToken(tokenID, randomOwner(), -time.Minute)
@@ -42,4 +44,10 @@ func TestExpiredPasetoToken(t *testing.T) {
 	require.Error(t, er)
 	require.Contains(t, er.Error(), "token has expired")
 	require.Nil(t, payload)
+}
+
+func TestInvalidSymmetricKey(t *testing.T) {
+	_, err := NewTokenMaker(randomString(1))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "invalid key size")
 }
