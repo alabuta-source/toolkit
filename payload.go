@@ -22,7 +22,7 @@ func NewPayload(tokenID, username string, duration time.Duration) *TokenPayload 
 	return payload
 }
 
-func (payload *TokenPayload) Valid() error {
+func (payload *TokenPayload) valid() error {
 	if time.Now().After(payload.ExpiredAt) {
 		return errors.New(formatErr(expiredTokenErr))
 	}
