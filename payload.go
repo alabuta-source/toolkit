@@ -48,3 +48,29 @@ type EmailTemplateBody struct {
 	Name string
 	URL  string
 }
+
+// GC_TYPE=
+// GC_PROJECT_ID=
+// GC_PRIVATE_KEY_ID=
+// GC_PRIVATE_KEY=
+// GC_CLIENT_EMAIL=
+// GC_CLIENT_ID=
+// GC_AUTH_URI=
+// GC_TOKEN_URI=
+// GC_AUTH_PROVIDER_X_CERT_URL=
+// GC_CLIENT_X_CERT_URL=
+// GC_UNIVERSE_DOMAIN=
+
+type GCPBucketAuthJson struct {
+	Type                    string `json:"type"`
+	ProjectID               string `json:"project_id"`
+	PrivateKeyID            string `json:"private_key_id"`
+	PrivateKey              string `json:"private_key"`
+	ClientEmail             string `json:"client_email"`
+	ClientID                string `json:"client_id"`
+	AuthURI                 string `json:"auth_uri"`
+	TokenURI                string `json:"token_uri"`
+	AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url"`
+	ClientX509CertURL       string `json:"client_x509_cert_url"`
+	UniverseDomain          string `json:"universe_domain"`
+}
