@@ -10,12 +10,11 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
-	"path"
 )
 
 type GCPWaitressManager interface {
 	SaveFile(multipart.File, *multipart.FileHeader) (string, error)
+	ListFiles(bucket string) ([]string, error)
 }
 
 type gcpWaitress struct {
@@ -44,30 +43,36 @@ func NewGCPWaitress(bucket string, request *http.Request, gcpKey *GCPBucketAuthJ
 }
 
 func (w *gcpWaitress) SaveFile(file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
-	obj := w.bucket.Object(fileHeader.Filename)
-	wc := obj.NewWriter(w.ctx)
+	obj := w.bucket.
+		Object(fileHeader.Filename).
+		NewWriter(w.ctx)
 
-	wc.ObjectAttrs.CacheControl = "Cache-Control:no-cache, max-age=0"
+	obj.Attrs().CacheControl = "Cache-Control:no-cache, max-age=0"
 
-	if _, err := io.Copy(wc, file); err != nil {
+	if _, err := io.Copy(obj, file); err != nil {
 		return "", fmt.Errorf("unable to write file to Google Storage: %s", err.Error())
 	}
 
-	if er := wc.Close(); er != nil {
+	if er := obj.Close(); er != nil {
 		return "", fmt.Errorf("unable to close the writer: %s", er.Error())
 	}
-
-	return obj.ObjectName(), nil
+	return obj.Attrs().Name, nil
 }
 
-func objectNameFromUrl(imgUrl string) (string, error) {
-	if imgUrl == "" {
-		return "", nil
-	}
+func (w *gcpWaitress) ListFiles(bucket string) ([]string, error) {
+	resp := make([]string, 0)
+	objects := w.client.Bucket(bucket).Objects(w.ctx, nil)
 
-	urlPath, err := url.Parse(imgUrl)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse the url: %s", err.Error())
+	for {
+		attrs, err := objects.Next()
+		if attrs == nil {
+			break
+		}
+
+		if err != nil {
+			return nil, fmt.Errorf("error loading file: %s", err.Error())
+		}
+		resp = append(resp, attrs.Name)
 	}
-	return path.Base(urlPath.Path), nil
+	return resp, nil
 }
