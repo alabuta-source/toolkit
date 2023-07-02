@@ -80,3 +80,43 @@ func SendWellComeEmailWithTemplate(to string, subject string, templatePath strin
 }
 ```
 
+### Init a new GCP Waitress 
+```go
+package main
+import "github.com/alabuta-source/toolkit"
+
+func GCPWaitress(c *gin.Context) (toolkit.GCPWaitressManager, error) {
+    bytes, err := os.ReadFile("foo/key.json")
+    if err != nil {
+        return nil, err
+    }
+    return toolkit.NewGCPWaitress("bucket-name", c.Request, bytes)
+}
+```
+
+### Upload file using GCP Waitress
+```go
+func UploadFile(c *gin.Context) {
+    file, fileHeader, err := c.Request.FormFile("file")
+    if err != nil {
+       return nil, err
+    }
+   
+    waitress, err := GCPWaitress(c)
+    if err != nil {
+       c.JSON(status, err)
+       return
+    }
+   
+   // params: file, fileHeader, prefix and cacheControl
+   //if the cacheControl is empty, the default value will be used
+   filename, err := waitress.SaveFile(file, fileHeader, "folder/", "")
+   if err != nil {
+      c.JSON(status, err)
+      return
+   }
+   c.JSON(http.Status.ok, fmt.Sprintf("%s uploaded", filename))
+}
+```
+
+
