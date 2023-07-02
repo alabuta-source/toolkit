@@ -35,9 +35,9 @@ type GCPWaitressManager interface {
 }
 
 type gcpWaitress struct {
-	client *storage.Client
-	bucket *storage.BucketHandle
-	ctx    context.Context
+	client     *storage.Client
+	ctx        context.Context
+	bucketName string
 }
 
 // NewGCPWaitress creates a new GCP Waitress pointer to access the GCP Bucket
@@ -56,47 +56,40 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketA
 		return nil, err
 	}
 
-	bucket := client.Bucket(bucketName)
-	if !bucketExiste(ctx, bucket) {
-		return nil, fmt.Errorf("%s returned nill, check the bucket name", bucketName)
-	}
-
 	return &gcpWaitress{
-		client: client,
-		bucket: bucket,
-		ctx:    ctx,
+		client:     client,
+		ctx:        ctx,
+		bucketName: bucketName,
 	}, nil
 }
 
 func (w *gcpWaitress) SaveFile(file multipart.File, fileHeader *multipart.FileHeader, prefix, cacheControl string) (string, error) {
-	obj := w.bucket.
-		Object(fileHeader.Filename).
-		NewWriter(w.ctx)
+	o := w.client.Bucket(w.bucketName).Object(fileHeader.Filename).NewWriter(w.ctx)
 
-	if objIsNil(obj) {
-		return "", errors.New("the object returned nil, check the file")
+	if _, err := io.Copy(o, file); err != nil {
+		return "", fmt.Errorf("unable to write file to Google Storage: %w", err)
 	}
 
 	if cacheControl == "" {
 		cacheControl = defaultCacheControl
 	}
 
-	obj.Attrs().CacheControl = cacheControl
-	obj.Attrs().Prefix = prefix
-
-	if _, err := io.Copy(obj, file); err != nil {
-		return "", fmt.Errorf("unable to write file to Google Storage: %w", err)
+	if objIsNil(o) {
+		return "", errors.New("the object returned nil, check the file")
 	}
 
-	if er := obj.Close(); er != nil {
+	o.Attrs().CacheControl = cacheControl
+	o.Attrs().Prefix = prefix
+
+	if er := o.Close(); er != nil {
 		return "", fmt.Errorf("unable to close the writer: %w", er)
 	}
-	return obj.Attrs().Name, nil
+	return o.Attrs().Name, nil
 }
 
 func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
 	resp := make([]string, 0)
-	objects := w.bucket.Objects(w.ctx, &storage.Query{
+	objects := w.client.Bucket(w.bucketName).Objects(w.ctx, &storage.Query{
 		Prefix:    prefix,
 		Delimiter: "/",
 	})
@@ -115,7 +108,7 @@ func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
 }
 
 func (w *gcpWaitress) DeleteFile(filename string) error {
-	oHandle := w.bucket.Object(filename)
+	oHandle := w.client.Bucket(w.bucketName).Object(filename)
 
 	attrs, err := oHandle.Attrs(w.ctx)
 	if err != nil {
