@@ -18,12 +18,10 @@ const (
 )
 
 type GCPWaitressManager interface {
-	// SaveFile saves a file to the bucket and returns the name of the file or an error
+	// UploadFile saves a file to the bucket and returns the name of the file or an error
+	// The object is the name of the file to save in the bucket
 	// The prefix is used to create a folder in the bucket, if the prefix is empty, the file will be saved in the root of the bucket.
-	// Use the / after the prefix to create a folder, example: "images/"
-	// The cacheControl is used to set the cache control header in the file, if the cacheControl is empty, the default value will be used.
-	// The default value is: "Cache-Control:no-cache, max-age=0"
-	SaveFile(file multipart.File, fileHeader *multipart.FileHeader, prefix, cacheControl string) (string, error)
+	UploadFile(file multipart.File, object string, prefix string) (string, error)
 
 	// ListFiles returns a list of files in the bucket
 	// The prefix is used to filter the files, if the prefix is empty, all files will be returned.
@@ -35,9 +33,9 @@ type GCPWaitressManager interface {
 }
 
 type gcpWaitress struct {
-	client     *storage.Client
-	ctx        context.Context
-	bucketName string
+	client *storage.Client
+	ctx    context.Context
+	bucket *storage.BucketHandle
 }
 
 // NewGCPWaitress creates a new GCP Waitress pointer to access the GCP Bucket
@@ -56,43 +54,39 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketA
 		return nil, err
 	}
 
+	bucket := client.Bucket(bucketName)
+	if !bucketExiste(ctx, bucket) {
+		return nil, errors.New("bucket not founded")
+	}
+
 	return &gcpWaitress{
-		client:     client,
-		ctx:        ctx,
-		bucketName: bucketName,
+		client: client,
+		ctx:    ctx,
+		bucket: bucket,
 	}, nil
 }
 
-func (w *gcpWaitress) SaveFile(file multipart.File, fileHeader *multipart.FileHeader, prefix, cacheControl string) (string, error) {
-	o := w.client.Bucket(w.bucketName).Object(fileHeader.Filename).NewWriter(w.ctx)
+func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix string) (string, error) {
+	var name string
+	if prefix == "" {
+		name = object
+	}
+	name = fmt.Sprintf("%s/%s", prefix, object)
 
-	if _, err := io.Copy(o, file); err != nil {
-		return "", fmt.Errorf("unable to write file to Google Storage: %w", err)
+	wc := w.bucket.Object(name).NewWriter(w.ctx)
+	if _, err := io.Copy(wc, file); err != nil {
+		return "", fmt.Errorf("io.Copy: %v", err)
+	}
+	if err := wc.Close(); err != nil {
+		return "", fmt.Errorf("Writer.Close: %v", err)
 	}
 
-	if cacheControl == "" {
-		cacheControl = defaultCacheControl
-	}
-
-	if objIsNil(o) {
-		return "", errors.New("the object returned nil, check the file")
-	}
-
-	o.Attrs().CacheControl = cacheControl
-	o.Attrs().Prefix = prefix
-
-	if er := o.Close(); er != nil {
-		return "", fmt.Errorf("unable to close the writer: %w", er)
-	}
-	return o.Attrs().Name, nil
+	return w.buildURL(wc.Name, prefix, wc.Bucket), nil
 }
 
 func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
 	resp := make([]string, 0)
-	objects := w.client.Bucket(w.bucketName).Objects(w.ctx, &storage.Query{
-		Prefix:    prefix,
-		Delimiter: "/",
-	})
+	objects := w.bucket.Objects(w.ctx, nil)
 
 	for {
 		attrs, err := objects.Next()
@@ -108,7 +102,7 @@ func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
 }
 
 func (w *gcpWaitress) DeleteFile(filename string) error {
-	oHandle := w.client.Bucket(w.bucketName).Object(filename)
+	oHandle := w.bucket.Object(filename)
 
 	attrs, err := oHandle.Attrs(w.ctx)
 	if err != nil {
@@ -128,6 +122,6 @@ func bucketExiste(ctx context.Context, b *storage.BucketHandle) bool {
 	return err == nil
 }
 
-func objIsNil(w *storage.Writer) bool {
-	return w.Attrs() == nil
+func (*gcpWaitress) buildURL(name, prefix, bucketName string) string {
+	return fmt.Sprintf("https://storage.cloud.google.com/%s/%s/%s", bucketName, prefix, name)
 }
