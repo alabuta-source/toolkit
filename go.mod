@@ -7,7 +7,7 @@ require (
 	github.com/aead/chacha20poly1305 v0.0.0-20201124145622-1a5aba2a8b29
 	github.com/google/uuid v1.3.0
 	github.com/o1egl/paseto v1.0.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.3
 	google.golang.org/api v0.129.0
 	google.golang.org/appengine v1.6.7
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
