@@ -6,12 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"google.golang.org/appengine"
 	"io"
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/url"
+	"path"
 )
 
 type GCPWaitressManager interface {
@@ -22,7 +25,7 @@ type GCPWaitressManager interface {
 
 	// ListFiles returns a list of files in the bucket
 	// The prefix is used to filter the files, if the prefix is empty, all files will be returned.
-	// Make sure to add the / after the prefix to filter the files, example: "images/"
+	// Make sure to add the prefix to filter the files, example: "users"
 	ListFiles(prefix string) ([]string, error)
 
 	// DeleteFile use this method to delete a single file.
@@ -66,10 +69,10 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketA
 }
 
 func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix string) (string, error) {
-	name := fmt.Sprintf("%s/%s", prefix, object)
+	name := fmt.Sprintf("%s/%s", prefix, cutSpaces(object))
 	if prefix == "" {
 		log.Printf("You're saving file:[%s] without prefix", object)
-		name = object
+		name = cutSpaces(object)
 	}
 
 	wc := w.bucket.Object(name).NewWriter(w.ctx)
@@ -83,26 +86,33 @@ func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix stri
 	return w.buildURL(wc.Name, w.bucketName), nil
 }
 
-func (w *gcpWaitress) ListFiles(objet string) ([]string, error) {
+func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
 	resp := make([]string, 0)
-	objects := w.bucket.Objects(w.ctx, nil)
+	objects := w.bucket.Objects(w.ctx, &storage.Query{
+		StartOffset: prefix + "/",
+	})
 
 	for {
 		attrs, err := objects.Next()
+		if err == iterator.Done {
+			break
+		}
+
 		if err != nil {
 			return nil, fmt.Errorf("error loading file: %w", err)
 		}
-		if attrs == nil {
-			break
-		}
 		resp = append(resp, attrs.Name)
 	}
-	return resp, nil
+	return w.buildURLs(resp, w.bucketName), nil
 }
 
-func (w *gcpWaitress) DeleteFile(filename string) error {
-	oHandle := w.bucket.Object(filename)
+func (w *gcpWaitress) DeleteFile(fileUrl string) error {
+	filename, er := w.objectNameFromUrl(fileUrl)
+	if er != nil {
+		return er
+	}
 
+	oHandle := w.bucket.Object(filename)
 	attrs, err := oHandle.Attrs(w.ctx)
 	if err != nil {
 		return fmt.Errorf("error getting meta information about the object to delete it: %w", err)
@@ -123,4 +133,24 @@ func bucketExiste(ctx context.Context, b *storage.BucketHandle) bool {
 
 func (*gcpWaitress) buildURL(name, bucketName string) string {
 	return fmt.Sprintf("https://storage.cloud.google.com/%s/%s", bucketName, name)
+}
+
+func (w *gcpWaitress) buildURLs(names []string, bucketName string) []string {
+	resp := make([]string, 0, len(names))
+	for _, name := range names {
+		resp = append(resp, w.buildURL(name, bucketName))
+	}
+	return resp
+}
+
+func (*gcpWaitress) objectNameFromUrl(imgUrl string) (string, error) {
+	if imgUrl == "" {
+		return "", nil
+	}
+
+	urlPath, err := url.Parse(imgUrl)
+	if err != nil {
+		return "", fmt.Errorf("unable to parse the url: %s", err.Error())
+	}
+	return path.Base(urlPath.Path), nil
 }
