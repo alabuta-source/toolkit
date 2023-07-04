@@ -48,3 +48,7 @@ func formatErr(msg string, args ...interface{}) string {
 func cutSpaces(value string) string {
 	return strings.Replace(value, " ", "", -1)
 }
+
+func removeBucketName(path, bucket string) string {
+	return strings.Replace(path, fmt.Sprintf("/%s/", bucket), "", -1)
+}
