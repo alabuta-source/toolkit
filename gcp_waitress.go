@@ -14,7 +14,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
-	"path"
 )
 
 type GCPWaitressManager interface {
@@ -143,14 +142,14 @@ func (w *gcpWaitress) buildURLs(names []string, bucketName string) []string {
 	return resp
 }
 
-func (*gcpWaitress) objectNameFromUrl(imgUrl string) (string, error) {
+func (w *gcpWaitress) objectNameFromUrl(imgUrl string) (string, error) {
 	if imgUrl == "" {
-		return "", nil
+		return "", errors.New("the object url should not be empty")
 	}
 
 	urlPath, err := url.Parse(imgUrl)
 	if err != nil {
 		return "", fmt.Errorf("unable to parse the url: %s", err.Error())
 	}
-	return path.Base(urlPath.Path), nil
+	return removeBucketName(urlPath.Path, w.bucketName), nil
 }
