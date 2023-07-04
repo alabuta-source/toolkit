@@ -9,12 +9,9 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/appengine"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
-)
-
-const (
-	defaultCacheControl = "Cache-Control:no-cache, max-age=0"
 )
 
 type GCPWaitressManager interface {
@@ -33,9 +30,10 @@ type GCPWaitressManager interface {
 }
 
 type gcpWaitress struct {
-	client *storage.Client
-	ctx    context.Context
-	bucket *storage.BucketHandle
+	client     *storage.Client
+	ctx        context.Context
+	bucket     *storage.BucketHandle
+	bucketName string
 }
 
 // NewGCPWaitress creates a new GCP Waitress pointer to access the GCP Bucket
@@ -60,18 +58,19 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketA
 	}
 
 	return &gcpWaitress{
-		client: client,
-		ctx:    ctx,
-		bucket: bucket,
+		client:     client,
+		ctx:        ctx,
+		bucket:     bucket,
+		bucketName: bucketName,
 	}, nil
 }
 
 func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix string) (string, error) {
-	var name string
+	name := fmt.Sprintf("%s/%s", prefix, object)
 	if prefix == "" {
+		log.Printf("You're saving file:[%s] without prefix", object)
 		name = object
 	}
-	name = fmt.Sprintf("%s/%s", prefix, object)
 
 	wc := w.bucket.Object(name).NewWriter(w.ctx)
 	if _, err := io.Copy(wc, file); err != nil {
@@ -81,10 +80,10 @@ func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix stri
 		return "", fmt.Errorf("Writer.Close: %v", err)
 	}
 
-	return w.buildURL(wc.Name, prefix, wc.Bucket), nil
+	return w.buildURL(wc.Name, w.bucketName), nil
 }
 
-func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
+func (w *gcpWaitress) ListFiles(objet string) ([]string, error) {
 	resp := make([]string, 0)
 	objects := w.bucket.Objects(w.ctx, nil)
 
@@ -122,6 +121,6 @@ func bucketExiste(ctx context.Context, b *storage.BucketHandle) bool {
 	return err == nil
 }
 
-func (*gcpWaitress) buildURL(name, prefix, bucketName string) string {
-	return fmt.Sprintf("https://storage.cloud.google.com/%s/%s/%s", bucketName, prefix, name)
+func (*gcpWaitress) buildURL(name, bucketName string) string {
+	return fmt.Sprintf("https://storage.cloud.google.com/%s/%s", bucketName, name)
 }

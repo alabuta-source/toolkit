@@ -80,42 +80,64 @@ func SendWellComeEmailWithTemplate(to string, subject string, templatePath strin
 }
 ```
 
-### Init a new GCP Waitress 
+### ### Upload file using GCP Waitress
 ```go
 package main
-import "github.com/alabuta-source/toolkit"
+import (
+	"encoding/json"
+	"github.com/alabuta-source/toolkit"
+	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"os"
+)
 
-func GCPWaitress(c *gin.Context) (toolkit.GCPWaitressManager, error) {
-    bytes, err := os.ReadFile("foo/key.json")
-    if err != nil {
-        return nil, err
-    }
-    return toolkit.NewGCPWaitress("bucket-name", c.Request, bytes)
+//init a GCP waitress manager
+func gcpKey(request *http.Request, bucket string) (toolkit.GCPWaitressManager, error) {
+	key := new(toolkit.GCPBucketAuthJson)
+	bytes, err := os.ReadFile("key.json")
+	if err != nil {
+		return nil, err
+	}
+	_ = json.Unmarshal(bytes, key)
+	return toolkit.NewGCPWaitress(bucket, request, key)
 }
-```
 
-### Upload file using GCP Waitress
-```go
-func UploadFile(c *gin.Context) {
-    file, fileHeader, err := c.Request.FormFile("file")
-    if err != nil {
-       return nil, err
-    }
-   
-    waitress, err := GCPWaitress(c)
-    if err != nil {
-       c.JSON(status, err)
-       return
-    }
-   
-   // params: file, fileHeader, prefix and cacheControl
-   //if the cacheControl is empty, the default value will be used
-   filename, err := waitress.SaveFile(file, fileHeader, "folder/", "")
-   if err != nil {
-      c.JSON(status, err)
-      return
-   }
-   c.JSON(http.Status.ok, fmt.Sprintf("%s uploaded", filename))
+func uploadFile(c *gin.Context) {
+	waitress, err := gcpKey(c.Request, "go-tool")
+	if err != nil {
+		//handle error
+		return
+	}
+
+	fileHeader, er := c.FormFile("file")
+	if er != nil {
+		//handle error
+		return
+	}
+
+	file, e := fileHeader.Open()
+	if e != nil {
+		//handle error
+	}
+    
+	fileUrl, wErr := waitress.UploadFile(file, fileHeader.Filename, "user")
+	if wErr != nil {
+		//handle error
+		return
+	}
+	c.JSON(http.StatusOK, fileUrl)
+}
+
+func main() {
+	router := gin.Default()
+	router.POST("/upload", uploadFile)
+
+	err := router.Run(":8080")
+	if err != nil {
+		//handle error
+		return
+	}
 }
 ```
 
