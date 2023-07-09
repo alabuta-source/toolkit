@@ -42,11 +42,16 @@ type EmailSenderConfig struct {
 	Port int
 }
 
-// EmailTemplateBody is a struct that contains the configuration for the email template
+// EmailTemplateBody
 // Use it to send data for simple templates that only need a name and an url.
 type EmailTemplateBody struct {
 	Name string
 	URL  string
+}
+
+type SimpleNotifyTemplate struct {
+	Name    string
+	Message string
 }
 
 // GC_TYPE=

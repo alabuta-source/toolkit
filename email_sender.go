@@ -18,10 +18,7 @@ type EmailSender interface {
 	// to: the email address that will receive the email
 	SendEmail(to string, subject string, body string) error
 
-	// SendEmailWithSimpleTemplate sends an email using a simple a basic template.
-	// templatePath: the path to the template file, the file must be a html file, example: "src/templates/email.html"
-	// data: the data that will be used to fill the template, the template must have the following variables: {{.Name}} and {{.URL}}
-	SendEmailWithSimpleTemplate(to string, subject string, templatePath string, data *EmailTemplateBody) error
+	SendBudgetEmail(to string, subject string, file string, data *SimpleNotifyTemplate) error
 }
 
 type sender struct {
@@ -49,16 +46,12 @@ func (s *sender) SendEmail(to string, subject string, body string) error {
 	return s.dialAndSendMessage(message)
 }
 
-// SendEmailWithSimpleTemplate sends an email using a simple a basic template.
-// templatePath: the path to the template file, the file must be a html file, example: "src/templates/email.html"
-// data: the data that will be used to fill the template, the template must have the following variables: {{.Name}} and {{.URL}}
-func (s *sender) SendEmailWithSimpleTemplate(to string, subject string, templatePath string, data *EmailTemplateBody) error {
-	dir, err := getRootDir()
-	if err != nil {
-		return err
-	}
+func (s *sender) SendBudgetEmail(to string, subject string, file string, data *SimpleNotifyTemplate) error {
+	return s.parseAndSend(to, subject, file, data)
+}
 
-	path := fmt.Sprintf("%s/%s", dir, templatePath)
+func (s *sender) parseAndSend(to, subject, file string, data *SimpleNotifyTemplate) error {
+	path := fmt.Sprintf("%s/%s", "templates", file)
 	temp, tErr := template.ParseFiles(path)
 	if tErr != nil {
 		return tErr
@@ -72,7 +65,6 @@ func (s *sender) SendEmailWithSimpleTemplate(to string, subject string, template
 
 	message := s.newMessage(to, subject, bf.String())
 	return s.dialAndSendMessage(message)
-
 }
 
 func (s *sender) newMessage(to, subject, body string) *gomail.Message {
