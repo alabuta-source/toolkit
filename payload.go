@@ -54,6 +54,13 @@ type SimpleNotifyTemplate struct {
 	Message string
 }
 
+type BudgetTemplateBody struct {
+	Name    string
+	Message string
+	Phone   string
+	Email   string
+}
+
 // GC_TYPE=
 // GC_PROJECT_ID=
 // GC_PRIVATE_KEY_ID=

@@ -21,7 +21,7 @@ type EmailSender interface {
 	SendWelcomeEmail(to string, subject string, name string, needCopy []string) error
 	SendResetPassEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error
 	SendVerifyEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error
-	SendBudgetEmail(to string, subject string, needCopy []string, data *SimpleNotifyTemplate) error
+	SendBudgetEmail(to string, subject string, needCopy []string, data *BudgetTemplateBody) error
 }
 
 type sender struct {
@@ -49,8 +49,8 @@ func (s *sender) SendEmail(to string, subject string, body string, needCopy []st
 	return s.dialAndSendMessage(message)
 }
 
-func (s *sender) SendBudgetEmail(to string, subject string, needCopy []string, data *SimpleNotifyTemplate) error {
-	return s.parseAndSend(to, subject, resetPassTemplate(), needCopy, data)
+func (s *sender) SendBudgetEmail(to string, subject string, needCopy []string, data *BudgetTemplateBody) error {
+	return s.parseAndSend(to, subject, budgetTemplate(), needCopy, data)
 }
 
 func (s *sender) SendWelcomeEmail(to string, subject string, name string, needCopy []string) error {
@@ -65,7 +65,7 @@ func (s *sender) SendVerifyEmail(to string, subject string, data *SimpleNotifyTe
 	return s.parseAndSend(to, subject, verifyEmailTemplate(), needCopy, data)
 }
 
-func (s *sender) parseAndSend(to, subject string, file string, needCopy []string, data *SimpleNotifyTemplate) error {
+func (s *sender) parseAndSend(to, subject string, file string, needCopy []string, data interface{}) error {
 	temp, tErr := template.New("toolkit_sender").Parse(file)
 	if tErr != nil {
 		return tErr
