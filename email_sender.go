@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/yosssi/gohtml"
 	"gopkg.in/gomail.v2"
 	"html/template"
 )
@@ -16,12 +17,11 @@ const (
 type EmailSender interface {
 	// SendEmail sends a simple email.
 	// to: the email address that will receive the email
-	SendEmail(to string, subject string, body string) error
-
-	// SendEmailWithSimpleTemplate sends an email using a simple a basic template.
-	// templatePath: the path to the template file, the file must be a html file, example: "src/templates/email.html"
-	// data: the data that will be used to fill the template, the template must have the following variables: {{.Name}} and {{.URL}}
-	SendEmailWithSimpleTemplate(to string, subject string, templatePath string, data *EmailTemplateBody) error
+	SendEmail(to string, subject string, body string, needCopy []string) error
+	SendWelcomeEmail(to string, subject string, name string, needCopy []string) error
+	SendResetPassEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error
+	SendVerifyEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error
+	SendBudgetEmail(to string, subject string, needCopy []string, data *BudgetTemplateBody) error
 }
 
 type sender struct {
@@ -44,41 +44,46 @@ func NewEmailSender(configs *EmailSenderConfig) EmailSender {
 
 // SendEmail sends a simple email.
 // to: the email address that will receive the email
-func (s *sender) SendEmail(to string, subject string, body string) error {
-	message := s.newMessage(to, subject, body)
+func (s *sender) SendEmail(to string, subject string, body string, needCopy []string) error {
+	message := s.newMessage(to, subject, body, needCopy)
 	return s.dialAndSendMessage(message)
 }
 
-// SendEmailWithSimpleTemplate sends an email using a simple a basic template.
-// templatePath: the path to the template file, the file must be a html file, example: "src/templates/email.html"
-// data: the data that will be used to fill the template, the template must have the following variables: {{.Name}} and {{.URL}}
-func (s *sender) SendEmailWithSimpleTemplate(to string, subject string, templatePath string, data *EmailTemplateBody) error {
-	dir, err := getRootDir()
-	if err != nil {
-		return err
-	}
+func (s *sender) SendBudgetEmail(to string, subject string, needCopy []string, data *BudgetTemplateBody) error {
+	return s.parseAndSend(to, subject, budgetTemplate(), needCopy, data)
+}
 
-	path := fmt.Sprintf("%s/%s", dir, templatePath)
-	temp, tErr := template.ParseFiles(path)
+func (s *sender) SendWelcomeEmail(to string, subject string, name string, needCopy []string) error {
+	return s.parseAndSend(to, subject, welcomeTemplate(), needCopy, &SimpleNotifyTemplate{Name: name})
+}
+
+func (s *sender) SendResetPassEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error {
+	return s.parseAndSend(to, subject, resetPassTemplate(), needCopy, data)
+}
+
+func (s *sender) SendVerifyEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error {
+	return s.parseAndSend(to, subject, verifyEmailTemplate(), needCopy, data)
+}
+
+func (s *sender) parseAndSend(to, subject string, file string, needCopy []string, data interface{}) error {
+	temp, tErr := template.New("toolkit_sender").Parse(file)
 	if tErr != nil {
 		return tErr
 	}
-
 	var bf bytes.Buffer
-	if er := temp.Execute(&bf, data); er != nil {
+	if er := temp.Execute(gohtml.NewWriter(&bf), data); er != nil {
 		execErr := fmt.Sprintf(execTempErr, er.Error())
 		return errors.New(execErr)
 	}
-
-	message := s.newMessage(to, subject, bf.String())
+	message := s.newMessage(to, subject, bf.String(), needCopy)
 	return s.dialAndSendMessage(message)
-
 }
 
-func (s *sender) newMessage(to, subject, body string) *gomail.Message {
+func (s *sender) newMessage(to string, subject, body string, needCopy []string) *gomail.Message {
 	message := gomail.NewMessage()
 	message.SetHeader("From", s.From)
 	message.SetHeader("To", to)
+	message.SetHeader("Cc", needCopy...)
 	message.SetHeader("Subject", subject)
 	message.SetBody("text/html", body)
 
