@@ -16,11 +16,16 @@ import (
 	"net/url"
 )
 
+var (
+	MultipartMaxLength   int64 = 4 << 20 // 4MB
+	acceptedContentTypes       = map[string]bool{"image/png": true, "image/jpeg": true}
+)
+
 type GCPWaitressManager interface {
 	// UploadFile saves a file to the bucket and returns the name of the file or an error
 	// The object is the name of the file to save in the bucket
 	// The prefix is used to create a folder in the bucket, if the prefix is empty, the file will be saved in the root of the bucket.
-	UploadFile(file multipart.File, object string, prefix string) (string, error)
+	UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix string) (string, error)
 
 	// ListFiles returns a list of files in the bucket
 	// The prefix is used to filter the files, if the prefix is empty, all files will be returned.
@@ -67,11 +72,20 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketA
 	}, nil
 }
 
-func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix string) (string, error) {
-	name := fmt.Sprintf("%s/%s", prefix, cutSpaces(object))
+func (w *gcpWaitress) UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix string) (string, error) {
+	if !w.hasValidContentType(fileHeader) {
+		return "", errors.New("invalid Content-Type, here is the valid list ['image/png', 'image/jpeg']")
+	}
+
+	if fileHeader.Size > MultipartMaxLength {
+		return "", fmt.Errorf("image too large, max len: %d [4MB]", MultipartMaxLength)
+	}
+
+	id := generateUUID()
+	name := fmt.Sprintf("%s/%s", prefix, id)
 	if prefix == "" {
-		log.Printf("You're saving file:[%s] without prefix", object)
-		name = cutSpaces(object)
+		log.Printf("You're saving file:[%s] without prefix", name)
+		name = id
 	}
 
 	wc := w.bucket.Object(name).NewWriter(w.ctx)
@@ -82,7 +96,7 @@ func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix stri
 		return "", fmt.Errorf("Writer.Close: %v", err)
 	}
 
-	return w.buildURL(wc.Name, w.bucketName), nil
+	return w.buildURL(wc.Name), nil
 }
 
 func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
@@ -102,7 +116,7 @@ func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
 		}
 		resp = append(resp, attrs.Name)
 	}
-	return w.buildURLs(resp, w.bucketName), nil
+	return w.buildURLs(resp), nil
 }
 
 func (w *gcpWaitress) DeleteFile(fileUrl string) error {
@@ -117,7 +131,7 @@ func (w *gcpWaitress) DeleteFile(fileUrl string) error {
 		return fmt.Errorf("error getting meta information about the object to delete it: %w", err)
 	}
 
-	if er := oHandle.
+	if er = oHandle.
 		If(storage.Conditions{GenerationMatch: attrs.Generation}).
 		Delete(w.ctx); er != nil {
 		return fmt.Errorf("error trying delete obj: %w", er)
@@ -130,14 +144,14 @@ func bucketExiste(ctx context.Context, b *storage.BucketHandle) bool {
 	return err == nil
 }
 
-func (*gcpWaitress) buildURL(name, bucketName string) string {
-	return fmt.Sprintf("https://storage.cloud.google.com/%s/%s", bucketName, name)
+func (w *gcpWaitress) buildURL(name string) string {
+	return fmt.Sprintf("https://storage.googleapis.com/%s/%s", w.bucketName, name)
 }
 
-func (w *gcpWaitress) buildURLs(names []string, bucketName string) []string {
+func (w *gcpWaitress) buildURLs(names []string) []string {
 	resp := make([]string, 0, len(names))
 	for _, name := range names {
-		resp = append(resp, w.buildURL(name, bucketName))
+		resp = append(resp, w.buildURL(name))
 	}
 	return resp
 }
@@ -152,4 +166,9 @@ func (w *gcpWaitress) objectNameFromUrl(imgUrl string) (string, error) {
 		return "", fmt.Errorf("unable to parse the url: %s", err.Error())
 	}
 	return removeBucketName(urlPath.Path, w.bucketName), nil
+}
+
+func (*gcpWaitress) hasValidContentType(fileHeader *multipart.FileHeader) bool {
+	contentType := fileHeader.Header.Get("Content-Type")
+	return acceptedContentTypes[contentType]
 }

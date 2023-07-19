@@ -103,80 +103,80 @@ func gcpKey(request *http.Request, bucket string) (toolkit.GCPWaitressManager, e
     return toolkit.NewGCPWaitress(bucket, request, key)
 }
 
-//uploadFile example, you can send any file extension
-func uploadFile(c *gin.Context) {
-    waitress, err := gcpKey(c.Request, "your bucket name")
+//upload example, you can send any png or jpeg file
+func upload(c *gin.Context) {
+    prefix := c.Query("prefix")
+    file, header, err := c.Request.FormFile("file")
     if err != nil {
-        //handle error
-        return
-	}
-	    
-    fileHeader, er := c.FormFile("file")
-    if er != nil { 
         //handle error
         return
     }
 
-    file, e := fileHeader.Open()
-    if e != nil {
-		//handle error
-	}
-    
+    waitress, er := gcpKey(c.Request, "bucket name")
+    if er != nil {
+        //handle error
+        return
+    }
+
     // this method will return the object url
-    // example: https://storage.cloud.google.com/your-bucket/prefix/file.png
-    fileUrl, wErr := waitress.UploadFile(file, fileHeader.Filename, "the prefix")
+    // example: https://storage.googleapis.com/your-bucket/prefix/file.png
+    url, wErr := waitress.UploadFile(file, header, prefix)
     if wErr != nil {
         //handle error
         return
     }
-    c.JSON(http.StatusOK, fileUrl)
+    c.JSON(http.StatusCreated, url)
 }
 
 // List all bucket files example.
 // Just send the prefix to get all files
 // example: users, and you'll get all users images
-func getFiles(c *gin.Context) {
-    waitress, err := gcpKey(c.Request, "your bucket name")
-    if err != nil {
-        c.JSON(http.StatusBadRequest, err)
+func listAll(c *gin.Context) {
+    prefix := c.Query("prefix")
+    waitress, er := gcpKey(c.Request, "bucket name")
+    if er != nil {
+        //handle error 
         return
     }
+
     //response example
     /*
         [
-            "https://storage.cloud.google.com/your-bucket/prefix/file.png"
-            "https://storage.cloud.google.com/your-bucket/prefix/file2.png"
+            "https://storage.googleapis.com/your-bucket/prefix/file.png"
+            "https://storage.googleapis.com/your-bucket/prefix/file.jpeg"
         ]
-	*/
-    images, er := waitress.ListFiles("the prefix")
-    if er != nil {
-        c.JSON(http.StatusBadRequest, er)
+    */
+    urls, err := waitress.ListFiles(prefix)
+    if err != nil {
+        //handle error
         return
     }
-    c.JSON(http.StatusOK, images)
+    c.JSON(http.StatusOK, urls)
 }
 
 // This method is to delete a single file
-func delete(c *gin.Context) {
-    waitress, err := gcpKey(c.Request, "your bucket name")
-    if err != nil {
-        c.JSON(http.StatusBadRequest, err)
+func deleteFIle(c *gin.Context) {
+    imgUrl := c.Query("url")
+    waitress, er := gcpKey(c.Request, "bucket name")
+    if er != nil {
+        //handle error
         return
     }
-	
-    file := "https://storage.cloud.google.com/your-bucket/prefix/file2.png"
-    if er := waitress.DeleteFile(file); er != nil {
-        c.JSON(http.StatusBadRequest, er.Error())
-        return
+
+    if err := waitress.DeleteFile(imgUrl); err != nil {
+        if err != nil {
+            //handle error
+            return
+        }
     }
     c.JSON(http.StatusOK, "done")
 }
 
 func main() {
     router := gin.Default()
-    router.POST("/file", uploadFile)
-    router.GET("/files", getFiles)
-    router.DELETE("/file", delete)
+    router.POST("/file", upload)
+    router.GET("/files", listAll)
+    router.DELETE("/file", deleteFIle)
 
     err := router.Run(":8080")
     if err != nil {
