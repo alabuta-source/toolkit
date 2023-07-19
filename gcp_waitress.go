@@ -20,7 +20,7 @@ type GCPWaitressManager interface {
 	// UploadFile saves a file to the bucket and returns the name of the file or an error
 	// The object is the name of the file to save in the bucket
 	// The prefix is used to create a folder in the bucket, if the prefix is empty, the file will be saved in the root of the bucket.
-	UploadFile(file multipart.File, object string, prefix string) (string, error)
+	UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix string) (string, error)
 
 	// ListFiles returns a list of files in the bucket
 	// The prefix is used to filter the files, if the prefix is empty, all files will be returned.
@@ -67,11 +67,12 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketA
 	}, nil
 }
 
-func (w *gcpWaitress) UploadFile(file multipart.File, object string, prefix string) (string, error) {
-	name := fmt.Sprintf("%s/%s", prefix, cutSpaces(object))
+func (w *gcpWaitress) UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix string) (string, error) {
+	fileType := w.getFileType(fileHeader)
+	name := fmt.Sprintf("%s/%s.%s", prefix, generateUUID(), fileType)
 	if prefix == "" {
-		log.Printf("You're saving file:[%s] without prefix", object)
-		name = cutSpaces(object)
+		log.Printf("You're saving file:[%s] without prefix", name)
+		name = fmt.Sprintf("%s.%s", generateUUID(), fileType)
 	}
 
 	wc := w.bucket.Object(name).NewWriter(w.ctx)
@@ -152,4 +153,9 @@ func (w *gcpWaitress) objectNameFromUrl(imgUrl string) (string, error) {
 		return "", fmt.Errorf("unable to parse the url: %s", err.Error())
 	}
 	return removeBucketName(urlPath.Path, w.bucketName), nil
+}
+
+func (*gcpWaitress) getFileType(fileHeader *multipart.FileHeader) string {
+	contentType := fileHeader.Header["Content-Type"]
+	return split(contentType[0])
 }
