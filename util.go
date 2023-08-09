@@ -25,7 +25,7 @@ func randomOwner() string {
 	return randomString(6)
 }
 
-func generateUUID() string {
+func GenerateUUID() string {
 	return uuid.New().String()
 }
 

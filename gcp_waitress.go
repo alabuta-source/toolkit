@@ -81,7 +81,7 @@ func (w *gcpWaitress) UploadFile(file multipart.File, fileHeader *multipart.File
 		return "", fmt.Errorf("image too large, max len: %d [4MB]", MultipartMaxLength)
 	}
 
-	id := generateUUID()
+	id := GenerateUUID()
 	name := fmt.Sprintf("%s/%s", prefix, id)
 	if prefix == "" {
 		log.Printf("You're saving file:[%s] without prefix", name)
