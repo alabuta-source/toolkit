@@ -1,4 +1,4 @@
-package toolkit
+package gomail
 
 import (
 	"bytes"
@@ -8,6 +8,38 @@ import (
 	"gopkg.in/gomail.v2"
 	"html/template"
 )
+
+// EmailSenderConfig is a struct that contains the configuration for the email sender
+// Use it to create a new email sender client passing it as a parameter
+type EmailSenderConfig struct {
+	// The email account secret password
+	Password string
+	// The email account owner identification, this is the email address that will be used to send the emails
+	From string
+	// The email server configuration, example: smtp.gmail.com
+	ServerConfig string
+	// The email server port
+	Port int
+}
+
+// EmailTemplateBody
+// Use it to send data for simple templates that only need a name and an url.
+type EmailTemplateBody struct {
+	Name string
+	URL  string
+}
+
+type SimpleNotifyTemplate struct {
+	Name    string
+	Message string
+}
+
+type BudgetTemplateBody struct {
+	Name    string
+	Message string
+	Phone   string
+	Email   string
+}
 
 const (
 	sendMailError = "Error sending email: [%s]"
