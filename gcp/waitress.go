@@ -1,4 +1,4 @@
-package toolkit
+package gcp
 
 import (
 	"cloud.google.com/go/storage"
@@ -14,18 +14,47 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strings"
 )
+
+/* env
+GC_TYPE=
+GC_PROJECT_ID=
+GC_PRIVATE_KEY_ID=
+GC_PRIVATE_KEY=
+GC_CLIENT_EMAIL=
+GC_CLIENT_ID=
+GC_AUTH_URI=
+GC_TOKEN_URI=
+GC_AUTH_PROVIDER_X_CERT_URL=
+GC_CLIENT_X_CERT_URL=
+GC_UNIVERSE_DOMAIN=
+*/
+
+type BucketAuthJson struct {
+	Type                    string `json:"type"`
+	ProjectID               string `json:"project_id"`
+	PrivateKeyID            string `json:"private_key_id"`
+	PrivateKey              string `json:"private_key"`
+	ClientEmail             string `json:"client_email"`
+	ClientID                string `json:"client_id"`
+	AuthURI                 string `json:"auth_uri"`
+	TokenURI                string `json:"token_uri"`
+	AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url"`
+	ClientX509CertURL       string `json:"client_x509_cert_url"`
+	UniverseDomain          string `json:"universe_domain"`
+}
 
 var (
 	MultipartMaxLength   int64 = 4 << 20 // 4MB
 	acceptedContentTypes       = map[string]bool{"image/png": true, "image/jpeg": true}
 )
 
-type GCPWaitressManager interface {
+type WaitressManager interface {
 	// UploadFile saves a file to the bucket and returns the name of the file or an error
 	// The object is the name of the file to save in the bucket
 	// The prefix is used to create a folder in the bucket, if the prefix is empty, the file will be saved in the root of the bucket.
-	UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix string) (string, error)
+	UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix, id string) (string, error)
 
 	// ListFiles returns a list of files in the bucket
 	// The prefix is used to filter the files, if the prefix is empty, all files will be returned.
@@ -47,11 +76,11 @@ type gcpWaitress struct {
 // The bucket is the name of the bucket to access in Google Cloud Storage
 // The request is the http request to get the context, this is used to create the context for the GCP Client
 // The gcpKey is the json key to access the bucket, this key can be created in the Google Cloud Console and should have the Storage Admin role
-func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketAuthJson) (GCPWaitressManager, error) {
+func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *BucketAuthJson) (WaitressManager, error) {
 	ctx := appengine.NewContext(request)
 	bytes, er := json.Marshal(gcpKey)
 	if er != nil {
-		return nil, fmt.Errorf("error trying marshal de GCP key")
+		return nil, errors.New("error trying marshal de GCP key")
 	}
 
 	client, err := storage.NewClient(ctx, option.WithCredentialsJSON(bytes))
@@ -72,7 +101,7 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *GCPBucketA
 	}, nil
 }
 
-func (w *gcpWaitress) UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix string) (string, error) {
+func (w *gcpWaitress) UploadFile(file multipart.File, fileHeader *multipart.FileHeader, prefix, id string) (string, error) {
 	if !w.hasValidContentType(fileHeader) {
 		return "", errors.New("invalid Content-Type, here is the valid list ['image/png', 'image/jpeg']")
 	}
@@ -81,7 +110,6 @@ func (w *gcpWaitress) UploadFile(file multipart.File, fileHeader *multipart.File
 		return "", fmt.Errorf("image too large, max len: %d [4MB]", MultipartMaxLength)
 	}
 
-	id := GenerateUUID()
 	name := fmt.Sprintf("%s/%s", prefix, id)
 	if prefix == "" {
 		log.Printf("You're saving file:[%s] without prefix", name)
@@ -165,10 +193,14 @@ func (w *gcpWaitress) objectNameFromUrl(imgUrl string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("unable to parse the url: %s", err.Error())
 	}
-	return removeBucketName(urlPath.Path, w.bucketName), nil
+	return w.removeBucketName(urlPath.Path, w.bucketName), nil
 }
 
 func (*gcpWaitress) hasValidContentType(fileHeader *multipart.FileHeader) bool {
 	contentType := fileHeader.Header.Get("Content-Type")
 	return acceptedContentTypes[contentType]
+}
+
+func (*gcpWaitress) removeBucketName(path, bucket string) string {
+	return strings.Replace(path, fmt.Sprintf("/%s/", bucket), "", -1)
 }
