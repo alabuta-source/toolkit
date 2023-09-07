@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alabuta-source/toolkit/payment/src/efipay/pix"
+	"github.com/alabuta-source/toolkit/payment/pix"
 	"log"
 	"path"
 	"runtime"
@@ -14,15 +14,14 @@ var Credentials = map[string]interface{}{
 	"client_secret": "",
 	"sandbox":       true,
 	"timeout":       4,
-	"CA":            fmt.Sprintf("%s/efi-payment/src/certs/sand.crt.pem", getRootDir()),
-	"Key":           fmt.Sprintf("%s/efi-payment/src/certs/sand.key.pem", getRootDir()),
+	"CA":            fmt.Sprintf("%s/toolkit/payment/certs/sand.crt.pem", getRootDir()),
+	"Key":           fmt.Sprintf("%s/toolkit/payment/certs/sand.key.pem", getRootDir()),
 }
 
 func main() {
+	client := pix.NewEfiPay(Credentials)
 
 	body := pix.BuildDirectChargeBody(3600, "12345678000", "user test", "00.01")
-
-	client := pix.NewEfiPay(Credentials)
 	resp, err := client.CreateImmediateCharge(body)
 
 	chargeResponse := pix.DirectChargeResponse{}
@@ -31,7 +30,7 @@ func main() {
 		log.Println(err)
 	}
 
-	qrcodeBytes, er := client.PixGenerateQRCode(chargeResponse.WithQrCodeParam())
+	qrcodeBytes, er := client.PixGenerateQRCode("3")
 	code := pix.QrCodePix{}
 	_ = json.Unmarshal(qrcodeBytes, &code)
 	if er != nil {
