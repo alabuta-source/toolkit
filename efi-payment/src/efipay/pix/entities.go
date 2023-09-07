@@ -27,3 +27,22 @@ type QrCodePix struct {
 func (pixCharge *DirectChargeResponse) WithQrCodeParam() string {
 	return strconv.FormatInt(pixCharge.Location.ID, 10)
 }
+
+func BuildDirectChargeBody(dueDate int, cpf string, name string, value string) map[string]interface{} {
+	return map[string]interface{}{
+
+		"calendario": map[string]interface{}{
+			"expiracao": dueDate,
+		},
+		"devedor": map[string]interface{}{
+
+			"cpf":  cpf,
+			"nome": name,
+		},
+		"valor": map[string]interface{}{
+
+			"original": value,
+		},
+		"chave": "235d0898-d5e0-419e-97f2-ceb3017751f7",
+	}
+}

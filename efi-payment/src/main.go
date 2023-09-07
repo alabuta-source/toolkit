@@ -10,32 +10,17 @@ import (
 )
 
 var Credentials = map[string]interface{}{
-	"client_id":     "Client_Id_551a23cc9ef9d95008161b1cc3272d666ffc7d2a",
-	"client_secret": "Client_Secret_01ecb0b788e104bdad842c07c1e9b67e7c526243",
+	"client_id":     "",
+	"client_secret": "",
 	"sandbox":       true,
 	"timeout":       4,
-	"CA":            fmt.Sprintf("%s/efi-payment/src/certs/sand.crt.pem", getRootDir()), //caminho da chave publica
-	"Key":           fmt.Sprintf("%s/efi-payment/src/certs/sand.key.pem", getRootDir()), //caminho da chave privada
+	"CA":            fmt.Sprintf("%s/efi-payment/src/certs/sand.crt.pem", getRootDir()),
+	"Key":           fmt.Sprintf("%s/efi-payment/src/certs/sand.key.pem", getRootDir()),
 }
 
 func main() {
 
-	body := map[string]interface{}{
-
-		"calendario": map[string]interface{}{
-			"expiracao": 3600,
-		},
-		"devedor": map[string]interface{}{
-
-			"cnpj": "12345678000195",
-			"nome": "Empresa de Serviços SA",
-		},
-		"valor": map[string]interface{}{
-
-			"original": "00.01",
-		},
-		"chave": "235d0898-d5e0-419e-97f2-ceb3017751f7",
-	}
+	body := pix.BuildDirectChargeBody(3600, "12345678000", "user test", "00.01")
 
 	client := pix.NewEfiPay(Credentials)
 	resp, err := client.CreateImmediateCharge(body)
@@ -46,13 +31,13 @@ func main() {
 		log.Println(err)
 	}
 
-	qrcode, er := client.PixGenerateQRCode(chargeResponse.WithQrCodeParam())
+	qrcodeBytes, er := client.PixGenerateQRCode(chargeResponse.WithQrCodeParam())
 	code := pix.QrCodePix{}
-	_ = json.Unmarshal(qrcode, &code)
+	_ = json.Unmarshal(qrcodeBytes, &code)
 	if er != nil {
 		log.Println(er)
-	} //qrcodespix-h.sejaefi.com.br/v2/d966db22663b434486801facebd8a237
-	fmt.Println(qrcode)
+	}
+	fmt.Println(code)
 }
 
 func getRootDir() string {
