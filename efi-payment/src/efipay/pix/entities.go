@@ -1,4 +1,6 @@
-package efipay
+package pix
+
+import "strconv"
 
 type DirectChargeResponse struct {
 	Txid        string         `json:"txid"`
@@ -15,4 +17,13 @@ type ChargeLocation struct {
 
 type Value struct {
 	Original string `json:"original"`
+}
+
+type QrCodePix struct {
+	QrCode       string `json:"qrCode"`
+	ImagemQrcode string `json:"imagemQrcode"`
+}
+
+func (pixCharge *DirectChargeResponse) WithQrCodeParam() string {
+	return strconv.FormatInt(pixCharge.Location.ID, 10)
 }

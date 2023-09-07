@@ -22,4 +22,4 @@
 # Go workspace file
 go.work
 /src/certs
-/src/main.go
+./src/main.go

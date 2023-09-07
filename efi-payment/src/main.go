@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alabuta-source/toolkit/payment/src/efipay"
 	"github.com/alabuta-source/toolkit/payment/src/efipay/pix"
 	"log"
 	"path"
@@ -14,7 +13,7 @@ var Credentials = map[string]interface{}{
 	"client_id":     "Client_Id_551a23cc9ef9d95008161b1cc3272d666ffc7d2a",
 	"client_secret": "Client_Secret_01ecb0b788e104bdad842c07c1e9b67e7c526243",
 	"sandbox":       true,
-	"timeout":       20,
+	"timeout":       4,
 	"CA":            fmt.Sprintf("%s/efi-payment/src/certs/sand.crt.pem", getRootDir()), //caminho da chave publica
 	"Key":           fmt.Sprintf("%s/efi-payment/src/certs/sand.key.pem", getRootDir()), //caminho da chave privada
 }
@@ -41,12 +40,19 @@ func main() {
 	client := pix.NewEfiPay(Credentials)
 	resp, err := client.CreateImmediateCharge(body)
 
-	chargeResponse := efipay.DirectChargeResponse{}
+	chargeResponse := pix.DirectChargeResponse{}
 	_ = json.Unmarshal(resp, &chargeResponse)
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Println(resp)
+
+	qrcode, er := client.PixGenerateQRCode(chargeResponse.WithQrCodeParam())
+	code := pix.QrCodePix{}
+	_ = json.Unmarshal(qrcode, &code)
+	if er != nil {
+		log.Println(er)
+	} //qrcodespix-h.sejaefi.com.br/v2/d966db22663b434486801facebd8a237
+	fmt.Println(qrcode)
 }
 
 func getRootDir() string {
