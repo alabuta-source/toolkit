@@ -28,7 +28,7 @@ func (pixCharge *DirectChargeResponse) WithQrCodeParam() string {
 	return strconv.FormatInt(pixCharge.Location.ID, 10)
 }
 
-func BuildDirectChargeBody(dueDate int, cpf string, name string, value string) map[string]interface{} {
+func BuildDirectChargeBody(dueDate int, cpf string, name string, value string, pixKey string) map[string]interface{} {
 	return map[string]interface{}{
 
 		"calendario": map[string]interface{}{
@@ -43,6 +43,6 @@ func BuildDirectChargeBody(dueDate int, cpf string, name string, value string) m
 
 			"original": value,
 		},
-		"chave": "235d0898-d5e0-419e-97f2-ceb3017751f7",
+		"chave": pixKey,
 	}
 }

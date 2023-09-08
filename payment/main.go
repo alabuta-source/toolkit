@@ -18,10 +18,11 @@ var Credentials = map[string]interface{}{
 	"Key":           fmt.Sprintf("%s/toolkit/payment/certs/sand.key.pem", getRootDir()),
 }
 
+// "235d0898-d5e0-419e-97f2-ceb3017751f7"
 func main() {
 	client := pix.NewEfiPay(Credentials)
 
-	body := pix.BuildDirectChargeBody(3600, "12345678000", "user test", "00.01")
+	body := pix.BuildDirectChargeBody(3600, "12345678000", "user test", "00.01", "235d0898-d5e0-419e-97f2-ceb3017751f7")
 	resp, err := client.CreateImmediateCharge(body)
 
 	chargeResponse := pix.DirectChargeResponse{}
