@@ -1,6 +1,7 @@
-package error
+package apiError
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -60,17 +61,10 @@ func NewInternalServerApiError(message string, err error) RequestError {
 }
 
 func ParseError(err error) RequestError {
-	apiErr, ok := err.(RequestError)
+	var apiErr RequestError
+	ok := errors.As(err, &apiErr)
 	if !ok {
 		return NewInternalServerApiError(err.Error(), err)
 	}
 	return apiErr
-}
-
-func NewExpiredTokenError() RequestError {
-	return NewForbiddenError("Token has expired")
-}
-
-func NewInvalidTokenError() RequestError {
-	return NewBadRequestError("Token is invalid")
 }

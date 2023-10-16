@@ -47,7 +47,7 @@ type BucketAuthJson struct {
 
 var (
 	MultipartMaxLength   int64 = 4 << 20 // 4MB
-	acceptedContentTypes       = map[string]bool{"image/png": true, "image/jpeg": true}
+	acceptedContentTypes       = []string{"image/png", "image/jpeg"}
 )
 
 type WaitressManager interface {
@@ -89,7 +89,7 @@ func NewGCPWaitress(bucketName string, request *http.Request, gcpKey *BucketAuth
 	}
 
 	bucket := client.Bucket(bucketName)
-	if !bucketExiste(ctx, bucket) {
+	if !bucketExist(ctx, bucket) {
 		return nil, errors.New("bucket not founded")
 	}
 
@@ -135,7 +135,7 @@ func (w *gcpWaitress) ListFiles(prefix string) ([]string, error) {
 
 	for {
 		attrs, err := objects.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 
@@ -167,7 +167,7 @@ func (w *gcpWaitress) DeleteFile(fileUrl string) error {
 	return nil
 }
 
-func bucketExiste(ctx context.Context, b *storage.BucketHandle) bool {
+func bucketExist(ctx context.Context, b *storage.BucketHandle) bool {
 	_, err := b.Attrs(ctx)
 	return err == nil
 }
@@ -198,7 +198,12 @@ func (w *gcpWaitress) objectNameFromUrl(imgUrl string) (string, error) {
 
 func (*gcpWaitress) hasValidContentType(fileHeader *multipart.FileHeader) bool {
 	contentType := fileHeader.Header.Get("Content-Type")
-	return acceptedContentTypes[contentType]
+	for _, ct := range acceptedContentTypes {
+		if ct == contentType {
+			return true
+		}
+	}
+	return false
 }
 
 func (*gcpWaitress) removeBucketName(path, bucket string) string {
