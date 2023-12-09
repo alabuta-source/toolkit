@@ -6,7 +6,7 @@ import (
 )
 
 type UploadFileParams struct {
-	Prefix     string
+	ProductID  string
 	File       multipart.File
 	FileHeader *multipart.FileHeader
 	Ctx        context.Context

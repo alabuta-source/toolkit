@@ -12,6 +12,7 @@ import (
 
 type BucketService interface {
 	UploadFile(params *UploadFileParams) (string, error)
+	ListObjetFiles(ctx context.Context, productID string) ([]string, error)
 }
 
 type awsBucket struct {
@@ -59,15 +60,30 @@ func (bucket *awsBucket) UploadFile(params *UploadFileParams) (string, error) {
 	}(params.File)
 
 	fileType := getFileType(params.FileHeader)
-	fileName := fmt.Sprintf("%s/%s.%s", params.Prefix, generateUUID(), fileType)
+	fileName := fmt.Sprintf("%s/%s.%s", params.ProductID, generateUUID(), fileType)
 
 	_, err := bucket.s3Client.PutObject(params.Ctx, &s3.PutObjectInput{
-		Bucket: aws.String(bucket.bucketName),
-		Key:    aws.String(fileName),
-		Body:   params.File,
+		Bucket:      aws.String(bucket.bucketName),
+		Key:         aws.String(fileName),
+		Body:        params.File,
+		ContentType: aws.String(params.FileHeader.Header.Get(contentTypeKey)),
 	})
 	if err != nil {
 		return "", err
 	}
-	return buildPublicURL(fileName, fileType, bucket.bucketName), nil
+	return buildPublicURL(fileName, bucket.bucketName), nil
+}
+
+func (bucket *awsBucket) ListObjetFiles(ctx context.Context, productID string) ([]string, error) {
+	result, err := bucket.s3Client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+		Bucket: aws.String(bucket.bucketName),
+		Prefix: aws.String(fmt.Sprintf("%s/", productID)),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("Couldn't list objects in bucket %s. Here's why: %v\n",
+			bucket.bucketName,
+			err,
+		)
+	}
+	return buildAnyPublicURL(result.Contents, bucket.bucketName), err
 }
