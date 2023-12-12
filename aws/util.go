@@ -10,7 +10,7 @@ import (
 
 var (
 	multipartMaxLength   int64 = 4 << 20 // 4MB
-	acceptedContentTypes       = []string{"image/png", "image/jpeg"}
+	acceptedContentTypes       = []string{"image/png", "image/jpeg", "image/jpg"}
 	contentTypeKey             = "Content-Type"
 )
 
