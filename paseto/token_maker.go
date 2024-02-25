@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/aead/chacha20poly1305"
 	"github.com/o1egl/paseto"
-	"time"
 )
 
 var (
@@ -17,7 +16,7 @@ type TokenBuilder interface {
 	// CreateToken creates a new token for a specific username and duration,
 	// and returns the signed token string or an error.
 	// The tokenID is used to identify the token you can send a UUID or the userID.
-	CreateToken(tokenID, username string, duration time.Duration) (string, error)
+	CreateToken(option ...Option) (string, error)
 	// VerifyToken verifies the token string and returns the payload or an error.
 	VerifyToken(token string) (*TokenPayload, error)
 }
@@ -40,8 +39,8 @@ func NewTokenMaker(symmetricKey string) (TokenBuilder, error) {
 	return maker, nil
 }
 
-func (maker *pasetoMaker) CreateToken(tokenID, username string, duration time.Duration) (string, error) {
-	payload := NewPayload(tokenID, username, duration)
+func (maker *pasetoMaker) CreateToken(option ...Option) (string, error) {
+	payload := NewPayload(option...)
 	return maker.paseto.Encrypt(maker.symmetricKey, payload, nil)
 }
 
