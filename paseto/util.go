@@ -27,3 +27,11 @@ func randomOwner() string {
 func formatErr(msg string, args ...interface{}) string {
 	return fmt.Sprintf(msg, args...)
 }
+
+func setupOptions(option ...Option) *payloadOption {
+	var options payloadOption
+	for _, opt := range option {
+		opt(&options)
+	}
+	return &options
+}

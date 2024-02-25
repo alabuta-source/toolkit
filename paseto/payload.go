@@ -6,18 +6,20 @@ import (
 )
 
 type TokenPayload struct {
-	ID        string    `json:"id"`
-	Username  string    `json:"username"`
-	IssuedAt  time.Time `json:"issued_at"`
-	ExpiredAt time.Time `json:"expired_at"`
+	ID        string                 `json:"id"`
+	Metadata  map[string]interface{} `json:"metadata"`
+	IssuedAt  time.Time              `json:"issued_at"`
+	ExpiredAt time.Time              `json:"expired_at"`
 }
 
-func NewPayload(tokenID, username string, duration time.Duration) *TokenPayload {
+func NewPayload(option ...Option) *TokenPayload {
+	options := setupOptions(option...)
+
 	payload := &TokenPayload{
-		ID:        tokenID,
-		Username:  username,
-		IssuedAt:  time.Now(),
-		ExpiredAt: time.Now().Add(duration),
+		ID:        options.iD,
+		Metadata:  options.metadata,
+		IssuedAt:  options.issuedAt,
+		ExpiredAt: time.Now().Add(options.duration),
 	}
 	return payload
 }
