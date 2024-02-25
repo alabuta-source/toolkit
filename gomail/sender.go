@@ -49,11 +49,11 @@ const (
 type EmailSender interface {
 	// SendEmail sends a simple email.
 	// to: the email address that will receive the email
-	SendEmail(to string, subject string, body string, needCopy []string) error
-	SendWelcomeEmail(to string, subject string, name string, needCopy []string) error
-	SendResetPassEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error
-	SendVerifyEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error
-	SendBudgetEmail(to string, subject string, needCopy []string, data *BudgetTemplateBody) error
+	SendEmail(to string, option ...Option) error
+	SendWelcomeEmail(to string, option ...Option) error
+	SendResetPassEmail(to string, option ...Option) error
+	SendVerifyEmail(to string, option ...Option) error
+	SendBudgetEmail(to string, option ...Option) error
 }
 
 type sender struct {
@@ -76,48 +76,51 @@ func NewEmailSender(configs *EmailSenderConfig) EmailSender {
 
 // SendEmail sends a simple email.
 // to: the email address that will receive the email
-func (s *sender) SendEmail(to string, subject string, body string, needCopy []string) error {
-	message := s.newMessage(to, subject, body, needCopy)
+func (s *sender) SendEmail(to string, option ...Option) error {
+	reqOptions := s.setupOptions(option...)
+	message := s.newMessage(to, reqOptions.Subject(), reqOptions.Body(), reqOptions.NeedToCopy(), reqOptions.ReplyTo())
 	return s.dialAndSendMessage(message)
 }
 
-func (s *sender) SendBudgetEmail(to string, subject string, needCopy []string, data *BudgetTemplateBody) error {
-	return s.parseAndSend(to, subject, budgetTemplate(), needCopy, data)
+func (s *sender) SendBudgetEmail(to string, option ...Option) error {
+	return s.parseAndSend(to, option...)
 }
 
-func (s *sender) SendWelcomeEmail(to string, subject string, name string, needCopy []string) error {
-	return s.parseAndSend(to, subject, welcomeTemplate(), needCopy, &SimpleNotifyTemplate{Name: name})
+func (s *sender) SendWelcomeEmail(to string, option ...Option) error {
+	return s.parseAndSend(to, option...)
 }
 
-func (s *sender) SendResetPassEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error {
-	return s.parseAndSend(to, subject, resetPassTemplate(), needCopy, data)
+func (s *sender) SendResetPassEmail(to string, option ...Option) error {
+	return s.parseAndSend(to, option...)
 }
 
-func (s *sender) SendVerifyEmail(to string, subject string, data *SimpleNotifyTemplate, needCopy []string) error {
-	return s.parseAndSend(to, subject, verifyEmailTemplate(), needCopy, data)
+func (s *sender) SendVerifyEmail(to string, option ...Option) error {
+	return s.parseAndSend(to, option...)
 }
 
-func (s *sender) parseAndSend(to, subject string, file string, needCopy []string, data interface{}) error {
-	temp, tErr := template.New("toolkit_sender").Parse(file)
+func (s *sender) parseAndSend(to string, option ...Option) error {
+	reqOptions := s.setupOptions(option...)
+	temp, tErr := template.New("toolkit_sender").Parse(reqOptions.File())
 	if tErr != nil {
 		return tErr
 	}
 	var bf bytes.Buffer
-	if er := temp.Execute(gohtml.NewWriter(&bf), data); er != nil {
+	if er := temp.Execute(gohtml.NewWriter(&bf), reqOptions.Data()); er != nil {
 		execErr := fmt.Sprintf(execTempErr, er.Error())
 		return errors.New(execErr)
 	}
-	message := s.newMessage(to, subject, bf.String(), needCopy)
+	message := s.newMessage(to, reqOptions.Subject(), bf.String(), reqOptions.NeedToCopy(), reqOptions.ReplyTo())
 	return s.dialAndSendMessage(message)
 }
 
-func (s *sender) newMessage(to string, subject, body string, needCopy []string) *gomail.Message {
+func (s *sender) newMessage(to string, subject, body string, needCopy []string, replyTo string) *gomail.Message {
 	message := gomail.NewMessage()
 	message.SetHeader("From", s.From)
 	message.SetHeader("To", to)
 	message.SetHeader("Cc", needCopy...)
 	message.SetHeader("Subject", subject)
 	message.SetBody("text/html", body)
+	message.SetAddressHeader("Reply-To", replyTo, "Online Machine Support")
 
 	return message
 }
@@ -129,4 +132,12 @@ func (s *sender) dialAndSendMessage(message *gomail.Message) error {
 		return errors.New(dialerMessageErr)
 	}
 	return nil
+}
+
+func (*sender) setupOptions(option ...Option) *emailOption {
+	var reqOptions emailOption
+	for _, opt := range option {
+		opt(&reqOptions)
+	}
+	return &reqOptions
 }
