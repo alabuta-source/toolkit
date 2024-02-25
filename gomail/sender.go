@@ -78,51 +78,49 @@ func NewEmailSender(configs *EmailSenderConfig) EmailSender {
 // to: the email address that will receive the email
 func (s *sender) SendEmail(to string, option ...Option) error {
 	reqOptions := s.setupOptions(option...)
-	message := s.newMessage(to, reqOptions.Subject(), reqOptions.Body(), reqOptions.NeedToCopy())
+	message := s.newMessage(to, reqOptions.Subject(), reqOptions.Body(), reqOptions.NeedToCopy(), reqOptions.ReplyTo())
 	return s.dialAndSendMessage(message)
 }
 
 func (s *sender) SendBudgetEmail(to string, option ...Option) error {
-	reqOptions := s.setupOptions(option...)
-	return s.parseAndSend(to, reqOptions.Subject(), budgetTemplate(), reqOptions.NeedToCopy(), reqOptions.Data())
+	return s.parseAndSend(to, option...)
 }
 
 func (s *sender) SendWelcomeEmail(to string, option ...Option) error {
-	reqOptions := s.setupOptions(option...)
-	return s.parseAndSend(to, reqOptions.Subject(), welcomeTemplate(), reqOptions.NeedToCopy(), reqOptions.Data())
+	return s.parseAndSend(to, option...)
 }
 
 func (s *sender) SendResetPassEmail(to string, option ...Option) error {
-	reqOptions := s.setupOptions(option...)
-	return s.parseAndSend(to, reqOptions.Subject(), resetPassTemplate(), reqOptions.NeedToCopy(), reqOptions.Data())
+	return s.parseAndSend(to, option...)
 }
 
 func (s *sender) SendVerifyEmail(to string, option ...Option) error {
-	reqOptions := s.setupOptions(option...)
-	return s.parseAndSend(to, reqOptions.Subject(), verifyEmailTemplate(), reqOptions.NeedToCopy(), reqOptions.Data())
+	return s.parseAndSend(to, option...)
 }
 
-func (s *sender) parseAndSend(to, subject string, file string, needCopy []string, data interface{}) error {
-	temp, tErr := template.New("toolkit_sender").Parse(file)
+func (s *sender) parseAndSend(to string, option ...Option) error {
+	reqOptions := s.setupOptions(option...)
+	temp, tErr := template.New("toolkit_sender").Parse(reqOptions.File())
 	if tErr != nil {
 		return tErr
 	}
 	var bf bytes.Buffer
-	if er := temp.Execute(gohtml.NewWriter(&bf), data); er != nil {
+	if er := temp.Execute(gohtml.NewWriter(&bf), reqOptions.Data()); er != nil {
 		execErr := fmt.Sprintf(execTempErr, er.Error())
 		return errors.New(execErr)
 	}
-	message := s.newMessage(to, subject, bf.String(), needCopy)
+	message := s.newMessage(to, reqOptions.Subject(), bf.String(), reqOptions.NeedToCopy(), reqOptions.ReplyTo())
 	return s.dialAndSendMessage(message)
 }
 
-func (s *sender) newMessage(to string, subject, body string, needCopy []string) *gomail.Message {
+func (s *sender) newMessage(to string, subject, body string, needCopy []string, replyTo string) *gomail.Message {
 	message := gomail.NewMessage()
 	message.SetHeader("From", s.From)
 	message.SetHeader("To", to)
 	message.SetHeader("Cc", needCopy...)
 	message.SetHeader("Subject", subject)
 	message.SetBody("text/html", body)
+	message.SetAddressHeader("Reply-To", replyTo, "Online Machine Support")
 
 	return message
 }

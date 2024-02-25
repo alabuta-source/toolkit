@@ -4,6 +4,7 @@ type emailOption struct {
 	subject  string
 	body     string
 	replyTo  string
+	file     string
 	needCopy []string
 	data     interface{}
 }
@@ -58,4 +59,14 @@ func WithData(data interface{}) Option {
 
 func (e *emailOption) Data() interface{} {
 	return e.data
+}
+
+func WithHtmlFile(file string) Option {
+	return func(e *emailOption) {
+		e.file = file
+	}
+}
+
+func (e *emailOption) File() string {
+	return e.file
 }
