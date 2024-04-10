@@ -12,16 +12,26 @@ type TokenPayload struct {
 	ExpiredAt time.Time              `json:"expired_at"`
 }
 
-func NewPayload(option ...Option) *TokenPayload {
-	options := setupOptions(option...)
-
-	payload := &TokenPayload{
-		ID:        options.iD,
-		Metadata:  options.metadata,
-		IssuedAt:  options.issuedAt,
-		ExpiredAt: time.Now().Add(options.duration),
+func NewPayload(options ...Option) *TokenPayload {
+	var payload TokenPayload
+	for _, opt := range options {
+		opt(&payload)
 	}
-	return payload
+	return &payload
+}
+
+func (payload *TokenPayload) GetString(key string) string {
+	if value, ok := payload.Metadata[key]; ok {
+		return value.(string)
+	}
+	return ""
+}
+
+func (payload *TokenPayload) GetData(key string) interface{} {
+	if value, ok := payload.Metadata[key]; ok {
+		return value
+	}
+	return nil
 }
 
 func (payload *TokenPayload) valid() error {
