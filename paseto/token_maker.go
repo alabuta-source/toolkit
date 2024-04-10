@@ -45,9 +45,8 @@ func (maker *pasetoMaker) CreateToken(option ...Option) (string, error) {
 }
 
 func (maker *pasetoMaker) VerifyToken(token string) (*TokenPayload, error) {
-	payload := new(TokenPayload)
-
-	err := maker.paseto.Decrypt(token, maker.symmetricKey, payload, nil)
+	var payload TokenPayload
+	err := maker.paseto.Decrypt(token, maker.symmetricKey, &payload, nil)
 	if err != nil {
 		return nil, errors.New(formatErr(invalidTokenErr, err.Error()))
 	}
@@ -56,5 +55,5 @@ func (maker *pasetoMaker) VerifyToken(token string) (*TokenPayload, error) {
 	if err != nil {
 		return nil, err
 	}
-	return payload, nil
+	return &payload, nil
 }

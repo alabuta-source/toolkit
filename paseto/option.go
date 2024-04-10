@@ -2,35 +2,28 @@ package paseto
 
 import "time"
 
-type payloadOption struct {
-	iD       string
-	metadata map[string]interface{}
-	issuedAt time.Time
-	duration time.Duration
-}
-
-type Option func(*payloadOption)
+type Option func(payload *TokenPayload)
 
 func WithID(id string) Option {
-	return func(p *payloadOption) {
-		p.iD = id
+	return func(p *TokenPayload) {
+		p.ID = id
 	}
 }
 
 func WithMetadata(data map[string]interface{}) Option {
-	return func(p *payloadOption) {
-		p.metadata = data
+	return func(p *TokenPayload) {
+		p.Metadata = data
 	}
 }
 
 func WithIssueDate(date time.Time) Option {
-	return func(p *payloadOption) {
-		p.issuedAt = date
+	return func(p *TokenPayload) {
+		p.IssuedAt = date
 	}
 }
 
-func WithDuration(date time.Duration) Option {
-	return func(p *payloadOption) {
-		p.duration = date
+func WithDuration(duration time.Duration) Option {
+	return func(p *TokenPayload) {
+		p.ExpiredAt = time.Now().Add(duration)
 	}
 }
