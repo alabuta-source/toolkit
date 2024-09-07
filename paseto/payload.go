@@ -6,10 +6,10 @@ import (
 )
 
 type TokenPayload struct {
-	ID        string                 `json:"id"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	IssuedAt  time.Time              `json:"issued_at"`
-	ExpiredAt time.Time              `json:"expired_at"`
+	ID        string         `json:"id"`
+	Metadata  map[string]any `json:"metadata"`
+	IssuedAt  time.Time      `json:"issued_at"`
+	ExpiredAt time.Time      `json:"expired_at"`
 }
 
 func NewPayload(options ...Option) *TokenPayload {
@@ -27,7 +27,7 @@ func (payload *TokenPayload) GetString(key string) string {
 	return ""
 }
 
-func (payload *TokenPayload) GetData(key string) interface{} {
+func (payload *TokenPayload) GetData(key string) any {
 	if value, ok := payload.Metadata[key]; ok {
 		return value
 	}
@@ -36,7 +36,7 @@ func (payload *TokenPayload) GetData(key string) interface{} {
 
 func (payload *TokenPayload) valid() error {
 	if time.Now().After(payload.ExpiredAt) {
-		return errors.New(formatErr(expiredTokenErr))
+		return errors.New(expiredTokenErr)
 	}
 	return nil
 }

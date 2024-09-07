@@ -24,6 +24,6 @@ func randomOwner() string {
 	return randomString(6)
 }
 
-func formatErr(msg string, args ...interface{}) string {
+func formatErr(msg string, args ...any) string {
 	return fmt.Sprintf(msg, args...)
 }

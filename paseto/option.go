@@ -10,7 +10,7 @@ func WithID(id string) Option {
 	}
 }
 
-func WithMetadata(data map[string]interface{}) Option {
+func WithMetadata(data map[string]any) Option {
 	return func(p *TokenPayload) {
 		p.Metadata = data
 	}

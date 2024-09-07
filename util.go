@@ -7,7 +7,7 @@ import (
 	"unicode"
 )
 
-const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
+const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func randomString(n int) string {
 	var sb strings.Builder
@@ -21,9 +21,9 @@ func randomString(n int) string {
 	return sb.String()
 }
 
-func GenerateUUID() string {
-	char1 := randomString(4)
-	char2 := randomString(4)
+func GenerateID() string {
+	char1 := randomString(6)
+	char2 := randomString(6)
 	return fmt.Sprintf("%s-%s", char1, char2)
 }
 

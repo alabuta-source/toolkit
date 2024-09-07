@@ -4,7 +4,6 @@ go 1.22
 
 require (
 	github.com/aead/chacha20poly1305 v0.0.0-20201124145622-1a5aba2a8b29
-	github.com/alabuta-source/toolkit/rest v0.0.0-20240225214023-5630efa54f78
 	github.com/o1egl/paseto v1.0.0
 	github.com/stretchr/testify v1.9.0
 	github.com/yosssi/gohtml v0.0.0-20201013000340-ee4748c638f4

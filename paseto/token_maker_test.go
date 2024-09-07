@@ -1,10 +1,11 @@
 package paseto
 
 import (
-	"github.com/alabuta-source/toolkit"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/alabuta-source/toolkit"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPasetoMaker(t *testing.T) {
@@ -13,7 +14,7 @@ func TestPasetoMaker(t *testing.T) {
 
 	username := randomOwner()
 	duration := time.Minute
-	tokenID := toolkit.GenerateUUID()
+	tokenID := toolkit.GenerateID()
 
 	issuedAt := time.Now()
 	expiredAt := issuedAt.Add(duration)
@@ -43,7 +44,7 @@ func TestPasetoMaker(t *testing.T) {
 func TestExpiredPasetoToken(t *testing.T) {
 	maker, pErr := NewTokenMaker(randomString(32))
 	require.NoError(t, pErr)
-	tokenID := toolkit.GenerateUUID()
+	tokenID := toolkit.GenerateID()
 
 	token, err := maker.CreateToken(
 		WithID(tokenID),
