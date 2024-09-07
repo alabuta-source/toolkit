@@ -1,3 +1,3 @@
 module github.com/alabuta-source/toolkit/rest
 
-go 1.22
+go 1.23

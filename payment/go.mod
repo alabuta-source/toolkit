@@ -1,3 +1,3 @@
 module github.com/alabuta-source/toolkit/payment
 
-go 1.22
+go 1.23

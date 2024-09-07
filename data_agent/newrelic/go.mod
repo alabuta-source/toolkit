@@ -1,6 +1,6 @@
 module github.com/alabuta-source/toolkit/data-agent/newrelic
 
-go 1.22
+go 1.23
 
 require (
 	github.com/newrelic/go-agent/v3 v3.26.0
