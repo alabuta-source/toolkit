@@ -65,6 +65,8 @@ func (client *RestClient) Execute() error {
 	}
 
 	request.Header.Set("content-type", "application/json")
+	request.Header.Add("charset", "utf-8")
+	request.Header.Add("library", "toolkit-alabuta")
 	for k, v := range client.requestOptions.headers {
 		request.Header.Set(k, v)
 	}

@@ -26,7 +26,7 @@ type LinkPreviewOptions struct {
 	Disabled bool `json:"is_disabled"`
 }
 
-func SendMessage(chatID, message, parseMode string, disableNotification bool) error {
+func SendTelegramMessage(chatID, message, parseMode string, disableNotification bool) error {
 	token := os.Getenv("BOT_TOKEN")
 	url := fmt.Sprintf(sendMessageURL, token)
 	body := sendMessageBody{

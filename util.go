@@ -3,6 +3,7 @@ package toolkit
 import (
 	"fmt"
 	"math/rand"
+	"net/mail"
 	"strings"
 	"unicode"
 )
@@ -25,6 +26,15 @@ func GenerateID() string {
 	char1 := randomString(6)
 	char2 := randomString(6)
 	return fmt.Sprintf("%s-%s", char1, char2)
+}
+
+func IsValidEmailFormat(email string) bool {
+	_, err := mail.ParseAddress(email)
+	return err == nil
+}
+
+func IsNoRowsError(err error) bool {
+	return strings.Contains(err.Error(), "sql: no rows in result set")
 }
 
 func IsValidPassword(pwd string) bool {
