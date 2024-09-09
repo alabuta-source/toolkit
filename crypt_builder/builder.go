@@ -86,8 +86,7 @@ func (e encryptService) Decrypt(value string) (string, error) {
 }
 
 func (encryptService) writeAndEncodeCookie(encryptedValue string) string {
-	value := base64.URLEncoding.EncodeToString([]byte(encryptedValue))
-	return value
+	return base64.URLEncoding.EncodeToString([]byte(encryptedValue))
 }
 
 func (encryptService) readAndDecodeCookie(encryptedValue string) (string, error) {
