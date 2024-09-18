@@ -9,42 +9,23 @@ import (
 )
 
 const (
-	sendMessageURL    = "https://api.telegram.org/bot%s/sendMessage"
+	sendMessageURL    = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s&parse_mode=%s&disable_notification=%t"
 	MarkDownParseMode = "Markdown"
 	HTMLParseMode     = "HTML"
 )
 
-type sendMessageBody struct {
-	ChatID              string             `json:"chat_id"`
-	Text                string             `json:"text"`
-	ParseMode           string             `json:"parse_mode"`
-	DisableNotification bool               `json:"disable_notification"`
-	LinkPreviewOptions  LinkPreviewOptions `json:"link_preview_options"`
-}
-
-type LinkPreviewOptions struct {
-	Disabled bool `json:"is_disabled"`
-}
-
-func SendTelegramMessage(chatID, message, parseMode string, disableNotification bool) error {
-	token := os.Getenv("BOT_TOKEN")
-	url := fmt.Sprintf(sendMessageURL, token)
-	body := sendMessageBody{
-		ChatID:              chatID,
-		Text:                message,
-		ParseMode:           parseMode,
-		DisableNotification: disableNotification,
-		LinkPreviewOptions: LinkPreviewOptions{
-			Disabled: true,
-		},
-	}
+func SendTelegramMessage(chatID, message, parseMode string) error {
+	url := fmt.Sprintf(
+		sendMessageURL,
+		os.Getenv("BOT_TOKEN"),
+		chatID,
+		message,
+		parseMode,
+		false,
+	)
 
 	return rest.
 		NewHttpClient().
-		BuildRequest(
-			url,
-			http.MethodPost,
-			rest.RequestWithBody(&body),
-		).
+		BuildRequest(url, http.MethodPost).
 		Execute()
 }

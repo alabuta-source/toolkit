@@ -10,8 +10,8 @@ func (o optionFunc) Apply(reqErr *requestError) { o(reqErr) }
 
 func NewApiError(message string, status int, options ...Option) RequestError {
 	err := requestError{
-		Message: message,
-		Status:  status,
+		ErrorMessage: message,
+		ErrorStatus:  status,
 	}
 
 	for _, option := range options {
@@ -22,12 +22,6 @@ func NewApiError(message string, status int, options ...Option) RequestError {
 
 func WithIncommingError(err error) optionFunc {
 	return func(re *requestError) {
-		re.Code = err.Error()
-	}
-}
-
-func WithCauses(causes []any) optionFunc {
-	return func(re *requestError) {
-		re.Cause = causes
+		re.ErrorCode = err.Error()
 	}
 }

@@ -4,34 +4,31 @@ import (
 	"fmt"
 )
 
-type ErrorCauses []any
-
 type RequestError interface {
-	ErrorCode() string
+	Code() string
 	Error() string
-	ErrorStatus() int
-	ErrorMessage() string
+	Status() int
+	Message() string
 }
 
 type requestError struct {
-	Message string      `json:"message"`
-	Code    string      `json:"error"`
-	Status  int         `json:"status"`
-	Cause   ErrorCauses `json:"cause"`
+	ErrorMessage string `json:"message"`
+	ErrorCode    string `json:"error"`
+	ErrorStatus  int    `json:"status"`
 }
 
-func (e requestError) ErrorCode() string {
-	return e.Code
+func (e requestError) Code() string {
+	return e.ErrorCode
 }
 
 func (e requestError) Error() string {
-	return fmt.Sprintf("Message: %s;Error Code: %s;Status: %d; Cause: %v", e.Message, e.Code, e.Status, e.Cause)
+	return fmt.Sprintf("Message: %s;Error Code: %s;Status: %d", e.ErrorMessage, e.ErrorCode, e.ErrorStatus)
 }
 
-func (e requestError) ErrorStatus() int {
-	return e.Status
+func (e requestError) Status() int {
+	return e.ErrorStatus
 }
 
-func (e requestError) ErrorMessage() string {
-	return e.Message
+func (e requestError) Message() string {
+	return e.ErrorMessage
 }
