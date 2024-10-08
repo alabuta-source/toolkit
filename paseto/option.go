@@ -1,6 +1,8 @@
 package paseto
 
-import "time"
+import (
+	"time"
+)
 
 type Option func(payload *TokenPayload)
 
