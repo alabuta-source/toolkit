@@ -29,7 +29,7 @@ type pasetoMaker struct {
 	publicKey    ed25519.PublicKey
 	privatekey   ed25519.PrivateKey
 	symmetricKey []byte
-	footer       map[string]string
+	footer       string
 }
 
 // NewTokenMaker creates a new TokenBuilder.
@@ -56,7 +56,7 @@ func NewTokenMaker(
 		publicKey:    publicKey,
 		privatekey:   privatekey,
 		symmetricKey: []byte(symmetricKey),
-		footer:       map[string]string{"version": "2", "app": "alabuta-toolkit"},
+		footer:       "version 2 - app alabuta-toolkit",
 	}
 	return maker, nil
 }
@@ -65,19 +65,20 @@ func (maker *pasetoMaker) CreateToken(option ...Option) (string, error) {
 	payload := NewPayload(option...)
 
 	if maker.publicMode {
-		return maker.paseto.Sign(maker.privatekey, payload, &maker.footer)
+		return maker.paseto.Sign(maker.privatekey, payload, maker.footer)
 	}
-	return maker.paseto.Encrypt(maker.symmetricKey, payload, &maker.footer)
+	return maker.paseto.Encrypt(maker.symmetricKey, payload, maker.footer)
 }
 
 func (maker *pasetoMaker) VerifyToken(token string) (*TokenPayload, error) {
 	var payload TokenPayload
+	var footer string
 	var err error
 
 	if maker.publicMode {
-		err = maker.paseto.Verify(token, maker.publicKey, &payload, &maker.footer)
+		err = maker.paseto.Verify(token, maker.publicKey, &payload, &footer)
 	} else {
-		err = maker.paseto.Decrypt(token, maker.symmetricKey, &payload, &maker.footer)
+		err = maker.paseto.Decrypt(token, maker.symmetricKey, &payload, &footer)
 	}
 
 	if err != nil {
