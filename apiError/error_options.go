@@ -1,5 +1,7 @@
 package apiError
 
+import "fmt"
+
 type optionFunc func(*requestError)
 
 type Option interface {
@@ -20,8 +22,14 @@ func NewApiError(message string, status int, options ...Option) RequestError {
 	return err
 }
 
-func WithIncommingError(err error) optionFunc {
+func WithIncomingError(err error) optionFunc {
 	return func(re *requestError) {
-		re.ErrorCode = err.Error()
+		re.ErrorCode = fmt.Sprintf("%v", err)
+	}
+}
+
+func WithCause(cause string) optionFunc {
+	return func(re *requestError) {
+		re.Cause = cause
 	}
 }

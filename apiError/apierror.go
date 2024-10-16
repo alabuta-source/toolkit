@@ -14,6 +14,7 @@ type RequestError interface {
 type requestError struct {
 	ErrorMessage string `json:"message"`
 	ErrorCode    string `json:"error"`
+	Cause        string `json:"cause"`
 	ErrorStatus  int    `json:"status"`
 }
 
