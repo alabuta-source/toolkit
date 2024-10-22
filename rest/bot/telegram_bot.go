@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -27,5 +28,5 @@ func SendTelegramMessage(chatID, message, parseMode string) error {
 	return rest.
 		NewHttpClient().
 		BuildRequest(url, http.MethodPost).
-		Execute()
+		Execute(context.Background())
 }

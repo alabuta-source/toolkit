@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -47,7 +48,7 @@ func (client *RestClient) BuildRequest(url, method string, options ...Option) *R
 	return client
 }
 
-func (client *RestClient) Execute() error {
+func (client *RestClient) Execute(ctx context.Context) error {
 	var buf bytes.Buffer
 	if client.requestOptions.body != nil {
 		if err := json.NewEncoder(&buf).Encode(client.requestOptions.body); err != nil {
@@ -55,7 +56,7 @@ func (client *RestClient) Execute() error {
 		}
 	}
 
-	request, err := http.NewRequest(client.method, client.url, &buf)
+	request, err := http.NewRequestWithContext(ctx, client.method, client.url, &buf)
 	if err != nil {
 		return fmt.Errorf(
 			"error trying to build %s request, message: %v",
