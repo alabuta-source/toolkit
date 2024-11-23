@@ -12,10 +12,11 @@ type RequestError interface {
 }
 
 type requestError struct {
-	ErrorMessage string `json:"message"`
-	ErrorCode    string `json:"error"`
-	Cause        string `json:"cause"`
-	ErrorStatus  int    `json:"status"`
+	ErrorMessage string         `json:"message"`
+	ErrorCode    string         `json:"error"`
+	Cause        string         `json:"cause"`
+	Causes       map[string]any `json:"causes"`
+	ErrorStatus  int            `json:"status"`
 }
 
 func (e requestError) Code() string {

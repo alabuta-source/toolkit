@@ -33,3 +33,9 @@ func WithCause(cause string) optionFunc {
 		re.Cause = cause
 	}
 }
+
+func WithCauses(causes map[string]any) optionFunc {
+	return func(re *requestError) {
+		re.Causes = causes
+	}
+}
