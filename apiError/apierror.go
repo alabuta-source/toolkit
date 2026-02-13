@@ -6,6 +6,7 @@ import (
 
 type RequestError interface {
 	Code() string
+	ErrorCause() string
 	Error() string
 	Status() int
 	Message() string
@@ -13,9 +14,9 @@ type RequestError interface {
 
 type requestError struct {
 	ErrorMessage string `json:"message"`
-	ErrorCode    string `json:"error"`
-	Cause        string `json:"cause"`
-	Causes       []any  `json:"causes"`
+	ErrorCode    string `json:"error,omitempty"`
+	Cause        string `json:"cause,omitempty"`
+	Causes       []any  `json:"causes,omitempty"`
 	ErrorStatus  int    `json:"status"`
 }
 
@@ -33,4 +34,8 @@ func (e requestError) Status() int {
 
 func (e requestError) Message() string {
 	return e.ErrorMessage
+}
+
+func (e requestError) ErrorCause() string {
+	return e.Cause
 }
