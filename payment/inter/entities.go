@@ -1,10 +1,9 @@
 package inter
 
-import "strconv"
-
 // DirectChargeResponse mirrors the usual BACEN-style cob response fields used with payment/pix.
 type DirectChargeResponse struct {
 	Txid        string         `json:"txid"`
+	CopyPast    string         `json:"pixCopiaECola"`
 	Location    ChargeLocation `json:"loc"`
 	Status      string         `json:"status"`
 	ChargeValue Value          `json:"valor"`
@@ -20,17 +19,6 @@ type ChargeLocation struct {
 // Value holds the charge amount string.
 type Value struct {
 	Original string `json:"original"`
-}
-
-// QrCodePix is compatible with Efi-style QR responses (field names may vary per PSP; adjust if Inter differs).
-type QrCodePix struct {
-	QrCode       string `json:"qrCode"`
-	ImagemQrcode string `json:"imagemQrcode"`
-}
-
-// WithQrCodeParam returns the location id as string for PixGenerateQRCode, same helper as payment/pix.
-func (c *DirectChargeResponse) WithQrCodeParam() string {
-	return strconv.FormatInt(c.Location.ID, 10)
 }
 
 // BuildDirectChargeBody builds a BACEN-style immediate charge body (same shape as payment/pix.BuildDirectChargeBody).

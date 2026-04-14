@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/alabuta-source/toolkit/payment/pix"
 	"log"
 	"path"
 	"runtime"
+
+	"github.com/alabuta-source/toolkit/payment/pix"
 )
 
 var Credentials = map[string]interface{}{
@@ -44,10 +45,10 @@ func main() {
 //
 //	import "github.com/alabuta-source/toolkit/payment/inter"
 //
-//	interClient, err := inter.NewInter(Credentials)
-//	if err != nil { log.Fatal(err) }
-//	body := inter.BuildDirectChargeBody(3600, "12345678000", "user test", "00.01", "sua-chave-pix")
-//	resp, err := interClient.CreateImmediateCharge(body)
+// interClient, err := inter.NewInter(Credentials)
+// if err != nil { log.Fatal(err) }
+// body := inter.BuildDirectChargeBody(3600, "12345678000", "user test", "00.01", "sua-chave-pix")
+// resp, err := interClient.CreateImmediateCharge(body)
 
 func getRootDir() string {
 	_, filename, _, ok := runtime.Caller(0)
