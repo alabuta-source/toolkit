@@ -119,6 +119,44 @@ A resposta de exemplo abaixo representa Sucesso (201), apresentando a chave Pix 
   "chave": "345e4568-e89b-12d3-a456-006655440001"
 }
 ```
+## **Usar o módulo `payment` em outro projeto**
+
+Este diretório tem o seu próprio [`go.mod`](./go.mod): o módulo Go é **`github.com/alabuta-source/toolkit/payment`**, não o repositório raiz (`github.com/alabuta-source/toolkit`). Por isso:
+
+1. **Import do Banco Inter:** `github.com/alabuta-source/toolkit/payment/inter`
+2. **Import da Efi (pix):** `github.com/alabuta-source/toolkit/payment/pix`
+3. **Instalar dependência:**
+   ```bash
+   go get github.com/alabuta-source/toolkit/payment@latest
+   ```
+4. **Tag de release no Git:** uma tag `v1.0.0` só na raiz versiona o módulo **raiz**. Para o submódulo `payment`, crie tags no formato **`payment/v1.0.0`**, **`payment/v1.0.1`**, etc. No `go get`, use **só o semver** (sem o prefixo `payment/`): `go get github.com/alabuta-source/toolkit/payment@v1.0.0` ou `@latest`.
+5. **Desenvolvimento local** (clone ao lado do seu projeto):
+   ```text
+   replace github.com/alabuta-source/toolkit/payment => ../toolkit/payment
+   ```
+
+## **Banco Inter (Pix)**
+
+O pacote `inter` ([`payment/inter`](./inter/)) integra a API Pix do [Banco Inter Empresas](https://developers.inter.co/docs/introducao/sobre-este-portal) (CDPJ): OAuth2 em `/oauth/v2/token` com **mTLS** e endpoints sob `/pix/v2/...`.
+
+Use o mesmo estilo de mapa que a Efi: `client_id`, `client_secret`, `sandbox`, `timeout` (segundos), `CA` e `Key` (PEM da integração criada no Internet Banking). Opcionais: `scope` (string OAuth; o padrão do pacote cobre cob/cobv/pix/webhook — alinhe aos escopos habilitados na sua aplicação), `conta_corrente` (header `x-conta-corrente` quando necessário).
+
+```go
+client, err := inter.NewInter(map[string]interface{}{
+	"client_id":     "",
+	"client_secret": "",
+	"sandbox":       true,
+	"timeout":       30,
+	"CA":            "/caminho/certificado.pem",
+	"Key":           "/caminho/chave.pem",
+})
+// Cobrança imediata:
+// resp, err := client.CreateImmediateCharge(inter.BuildDirectChargeBody(...))
+// Cobrança com vencimento (cobv), com txid definido por você:
+// body := inter.BuildDueChargeBody("2025-12-31", "Nome", "100.00", "sua-chave-pix", "12345678901", "")
+// resp, err := client.CreateDueCharge("seu-txid-ate-35-chars", body)
+```
+
 ## **Documentação Adicional**
 
 A documentação completa com todos os endpoints e detalhes das APIs está disponível em https://dev.sejaefi.com.br/.
