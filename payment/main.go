@@ -40,6 +40,15 @@ func main() {
 	fmt.Println(code)
 }
 
+// Banco Inter (Pix): use certificados e credenciais da integração no Internet Banking, não os da Efi.
+//
+//	import "github.com/alabuta-source/toolkit/payment/inter"
+//
+//	interClient, err := inter.NewInter(Credentials)
+//	if err != nil { log.Fatal(err) }
+//	body := inter.BuildDirectChargeBody(3600, "12345678000", "user test", "00.01", "sua-chave-pix")
+//	resp, err := interClient.CreateImmediateCharge(body)
+
 func getRootDir() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {

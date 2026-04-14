@@ -119,6 +119,28 @@ A resposta de exemplo abaixo representa Sucesso (201), apresentando a chave Pix 
   "chave": "345e4568-e89b-12d3-a456-006655440001"
 }
 ```
+## **Banco Inter (Pix)**
+
+O pacote `inter` ([`payment/inter`](./inter/)) integra a API Pix do [Banco Inter Empresas](https://developers.inter.co/docs/introducao/sobre-este-portal) (CDPJ): OAuth2 em `/oauth/v2/token` com **mTLS** e endpoints sob `/pix/v2/...`.
+
+Use o mesmo estilo de mapa que a Efi: `client_id`, `client_secret`, `sandbox`, `timeout` (segundos), `CA` e `Key` (PEM da integração criada no Internet Banking). Opcionais: `scope` (string OAuth; o padrão do pacote cobre cob/cobv/pix/webhook — alinhe aos escopos habilitados na sua aplicação), `conta_corrente` (header `x-conta-corrente` quando necessário).
+
+```go
+client, err := inter.NewInter(map[string]interface{}{
+	"client_id":     "",
+	"client_secret": "",
+	"sandbox":       true,
+	"timeout":       30,
+	"CA":            "/caminho/certificado.pem",
+	"Key":           "/caminho/chave.pem",
+})
+// Cobrança imediata:
+// resp, err := client.CreateImmediateCharge(inter.BuildDirectChargeBody(...))
+// Cobrança com vencimento (cobv), com txid definido por você:
+// body := inter.BuildDueChargeBody("2025-12-31", "Nome", "100.00", "sua-chave-pix", "12345678901", "")
+// resp, err := client.CreateDueCharge("seu-txid-ate-35-chars", body)
+```
+
 ## **Documentação Adicional**
 
 A documentação completa com todos os endpoints e detalhes das APIs está disponível em https://dev.sejaefi.com.br/.
